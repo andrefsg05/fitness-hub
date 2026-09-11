@@ -1,56 +1,59 @@
-# Welcome to your Expo app 👋
+# FitnessBro 🏋️‍♂️
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**FitnessBro** is a personal mobile fitness tracking application designed to help users log workouts, body metrics, nutrition, and daily habits seamlessly. 
 
-## Get started
+Built with an **offline-first** approach, it serves as a straightforward and reliable fitness diary to track training evolution, sets, weights, and body progress over time without friction.
 
-1. Install dependencies
+---
+
+## 🎯 Features (Core MVP)
+
+- 📝 **Workout Logging:** Easily record workouts, exercises, sets, reps, and weights used with custom notes.
+- 📊 **Progress & Evolution:** Track personal records (PRs), exercise history, and training frequency over time.
+- ⚖️ **Body Weight & Metrics:** Log body weight updates and track physical changes.
+- 🔔 **Habits & Reminders:** Set up local notifications and reminders for daily fitness habits (drinking water, taking creatine, weighing in, workout sessions).
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework:** React Native with [Expo](https://expo.dev)
+- **Language:** TypeScript
+- **Architecture:** Offline-first modular design with local SQLite persistence
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
+
+### Setup Instructions
+
+1. **Install dependencies**
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. **Start the development server**
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+3. **Run on your device or emulator**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   Follow the terminal output options to launch the app via:
+   - [Expo Go](https://expo.dev/go) app on your physical mobile device
+   - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
+   - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
+   - [Development build](https://docs.expo.dev/develop/development-builds/introduction/)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## 💡 Project Vision
 
-When you're ready, run:
+FitnessBro aims to start simple as a clean, reliable offline workout logger, incrementally evolving into a comprehensive platform combining analytics, nutrition tracking, and structured personal health data.
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
