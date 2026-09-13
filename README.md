@@ -1,6 +1,6 @@
-# FitnessBro 🏋️‍♂️
+# FitnessHub 🏋️‍♂️
 
-**FitnessBro** is a personal mobile fitness tracking application designed to help users log workouts, body metrics, nutrition, and daily habits seamlessly. 
+**FitnessHub** is a personal mobile fitness tracking application designed to help users log workouts, body metrics, nutrition, and daily habits seamlessly. 
 
 Built with an **offline-first** approach, it serves as a straightforward and reliable fitness diary to track training evolution, sets, weights, and body progress over time without friction.
 
@@ -55,5 +55,5 @@ Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
 
 ## 💡 Project Vision
 
-FitnessBro aims to start simple as a clean, reliable offline workout logger, incrementally evolving into a comprehensive platform combining analytics, nutrition tracking, and structured personal health data.
+FitnessHub aims to start simple as a clean, reliable offline workout logger, incrementally evolving into a comprehensive platform combining analytics, nutrition tracking, and structured personal health data.
 

@@ -1,4 +1,4 @@
-# FitnessBro — Contexto do Projeto
+# FitnessHub — Contexto do Projeto
 
 Estou a desenvolver uma aplicação mobile pessoal focada em **fitness, treino, nutrição e acompanhamento de progresso**. O objetivo inicial é criar uma aplicação simples, funcional e bem estruturada para registar os meus treinos e evolução, mas com uma arquitetura que permita posteriormente transformá-la numa plataforma mais inteligente, recorrendo a IA, automações e análise de dados.
 
