@@ -131,52 +131,59 @@ export default function ActiveWorkoutScreen() {
   // State 1: No active workout -> Start Screen
   if (!activeWorkout) {
     return (
-      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-        <View style={styles.headerRow}>
-          <View style={styles.header}>
-            <Pressable onPress={handleBack} style={styles.backBtn}>
-              <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
-            </Pressable>
-            <Text style={[styles.title, { color: colors.text }]}>New Workout</Text>
-          </View>
-          <Pressable
-            style={[styles.secondaryButton, { backgroundColor: colors.backgroundElement }]}
-            onPress={() => setShowNewTypeModal(true)}>
-            <Text style={[styles.secondaryButtonText, { color: colors.text }]}>+ New Custom Routine</Text>
+      <View style={[styles.container, { backgroundColor: colors.background, padding: Spacing.three, paddingTop: Spacing.five }]}>
+        <View style={styles.header}>
+          <Pressable onPress={handleBack} style={styles.backBtn}>
+            <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
           </Pressable>
+          <Text style={[styles.title, { color: colors.text }]}>New Workout</Text>
         </View>
 
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Select your workout routine to begin recording:
         </Text>
 
-        <View style={styles.typesGrid}>
-          {workoutTypes.map((type) => {
-            const isSelected = selectedWorkoutTypeId === type.id;
-            return (
-              <Pressable
-                key={type.id}
-                style={[
-                  styles.typeCard,
-                  { backgroundColor: isSelected ? colors.primarySubtle : colors.card, borderColor: isSelected ? colors.primary : colors.border },
-                ]}
-                onPress={() => setSelectedWorkoutTypeId(type.id)}>
-                <Text style={[styles.typeName, { color: isSelected ? colors.primary : colors.text }]}>
-                  {type.name}
-                </Text>
-                {type.is_custom === 1 && (
-                  <Text style={[styles.customBadge, { color: colors.textSecondary }]}>Custom</Text>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: Spacing.two }} showsVerticalScrollIndicator={false}>
+          <View style={styles.typesGrid}>
+            {workoutTypes.map((type) => {
+              const isSelected = selectedWorkoutTypeId === type.id;
+              return (
+                <Pressable
+                  key={type.id}
+                  style={[
+                    styles.typeCard,
+                    { backgroundColor: isSelected ? colors.primarySubtle : colors.card, borderColor: isSelected ? colors.primary : colors.border },
+                  ]}
+                  onPress={() => setSelectedWorkoutTypeId(type.id)}>
+                  <Text style={[styles.typeName, { color: isSelected ? colors.primary : colors.text }]}>
+                    {type.name}
+                  </Text>
+                  {type.is_custom === 1 && (
+                    <Text style={[styles.customBadge, { color: colors.textSecondary }]}>Custom</Text>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
 
-        <Pressable
-          style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-          onPress={handleStartWorkout}>
-          <Text style={styles.primaryBtnText}>Begin Workout Session 🚀</Text>
-        </Pressable>
+          <View style={[styles.customRoutineDivider, { backgroundColor: colors.border }]} />
+          <Text style={[styles.customRoutineHint, { color: colors.textSecondary }]}>
+            Need a different workout routine?
+          </Text>
+          <Pressable
+            style={[styles.customRoutineButton, { borderColor: colors.border }]}
+            onPress={() => setShowNewTypeModal(true)}>
+            <Text style={[styles.customRoutineButtonText, { color: colors.text }]}>+ New Custom Routine</Text>
+          </Pressable>
+        </ScrollView>
+
+        <View style={{ paddingTop: Spacing.three, paddingBottom: Spacing.three }}>
+          <Pressable
+            style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+            onPress={handleStartWorkout}>
+            <Text style={styles.primaryBtnText}>Begin Workout Session 🚀</Text>
+          </Pressable>
+        </View>
 
         {/* Modal: Create Custom Workout Type */}
         <Modal visible={showNewTypeModal} transparent animationType="fade">
@@ -214,7 +221,7 @@ export default function ActiveWorkoutScreen() {
             </View>
           </View>
         </Modal>
-      </ScrollView>
+      </View>
     );
   }
 
@@ -227,10 +234,9 @@ export default function ActiveWorkoutScreen() {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       {/* Top Header */}
       <View style={styles.headerRow}>
-        <View>
-          <Text style={[styles.activeTag, { color: colors.accent }]}>● LIVE WORKOUT</Text>
-          <Text style={[styles.title, { color: colors.text }]}>{activeWorkout.workout_type_name}</Text>
-        </View>
+        <Text style={[styles.activeTag, { color: colors.accent }]}>● LIVE</Text>
+
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{activeWorkout.workout_type_name}</Text>
 
         <Pressable style={styles.discardBtn} onPress={handleDiscard}>
           <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 13 }}>Discard</Text>
@@ -252,7 +258,6 @@ export default function ActiveWorkoutScreen() {
                 <Text style={[styles.exerciseName, { color: colors.text }]}>
                   {index + 1}. {we.exercise_name}
                 </Text>
-                <Text style={[styles.exerciseCategory, { color: colors.textSecondary }]}>{we.category}</Text>
               </View>
               <Pressable onPress={() => removeExercise(we.id)} style={{ padding: 4 }}>
                 <Text style={{ color: colors.danger, fontSize: 12 }}>Remove</Text>
@@ -388,7 +393,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 0,
+    marginBottom: Spacing.two,
+    position: 'relative',
+  },
+  headerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 22,
+    fontWeight: '700',
+    pointerEvents: 'none',
+    marginBottom: 6,
   },
   backBtn: {
     marginBottom: Spacing.two,
@@ -413,6 +429,25 @@ const styles = StyleSheet.create({
   typesGrid: {
     gap: Spacing.two,
     marginBottom: Spacing.four,
+  },
+  customRoutineDivider: {
+    height: 1,
+    marginBottom: Spacing.three,
+  },
+  customRoutineHint: {
+    fontSize: 14,
+    marginBottom: Spacing.three,
+  },
+  customRoutineButton: {
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    marginBottom: Spacing.two,
+  },
+  customRoutineButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   typeCard: {
     padding: Spacing.three,
@@ -440,15 +475,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   discardBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
     borderRadius: 10,
   },
   exerciseCard: {
     borderRadius: 16,
     padding: Spacing.three,
     borderWidth: 1,
-    marginBottom: Spacing.three,
+    marginVertical: Spacing.two,
   },
   exerciseHeader: {
     flexDirection: 'row',
