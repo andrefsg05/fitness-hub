@@ -49,7 +49,7 @@ export default function HomeScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.three,
-    paddingTop: Spacing.five,
+    paddingTop: Spacing.half,
   },
   header: {
     flexDirection: 'row',

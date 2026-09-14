@@ -85,7 +85,7 @@ export default function ProfileScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
-      
+
       {/* User Header Card */}
       <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.avatar}>
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.three,
-    paddingTop: Spacing.five,
+    paddingTop: Spacing.half,
   },
   profileCard: {
     flexDirection: 'row',

@@ -5,6 +5,9 @@ import { ActivityIndicator, useColorScheme, View, Text } from 'react-native';
 
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useFonts, Aldrich_400Regular } from '@expo-google-fonts/aldrich';
+
+
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { DatabaseProvider, useDatabase } from '@/context/DatabaseContext';
 import { Colors } from '@/constants/theme';
@@ -20,6 +23,10 @@ function RootApp() {
   const insets = useSafeAreaInsets();
   const customTopPadding = Math.max(insets.top - 14, 14);
 
+  const [fontsLoaded] = useFonts({
+    Aldrich_400Regular,
+  });
+
   if (error) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, padding: 24 }}>
@@ -29,7 +36,7 @@ function RootApp() {
     );
   }
 
-  if (!isReady) {
+  if (!fontsLoaded || !isReady) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />

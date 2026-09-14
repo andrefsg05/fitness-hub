@@ -49,7 +49,7 @@ export default function WorkoutsScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
-      
+
       {/* Title */}
       <View style={styles.headerRow}>
         <Text style={[styles.title, { color: colors.text }]}>Workouts</Text>
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.three,
-    paddingTop: Spacing.five,
+    paddingTop: Spacing.half,
   },
   headerRow: {
     flexDirection: 'row',
