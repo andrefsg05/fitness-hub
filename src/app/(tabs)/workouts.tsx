@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useColorScheme,
 } from 'react-native';
@@ -15,7 +14,6 @@ import { useRouter } from 'expo-router';
 import { ActiveWorkoutBanner } from '@/components/ActiveWorkoutBanner';
 import { WorkoutCard } from '@/components/WorkoutCard';
 import { useWorkouts } from '@/hooks/useWorkouts';
-import { useDatabase } from '@/context/DatabaseContext';
 import { Colors, Spacing } from '@/constants/theme';
 
 export default function WorkoutsScreen() {
@@ -24,24 +22,14 @@ export default function WorkoutsScreen() {
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
   const { recentWorkouts, history, isLoading, refresh } = useWorkouts();
-  const { workoutTypeRepo } = useDatabase();
 
   const [refreshing, setRefreshing] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [showNewTypeModal, setShowNewTypeModal] = useState(false);
-  const [newTypeName, setNewTypeName] = useState('');
 
   const onRefresh = async () => {
     setRefreshing(true);
     await refresh();
     setRefreshing(false);
-  };
-
-  const handleCreateWorkoutType = async () => {
-    if (!newTypeName.trim() || !workoutTypeRepo) return;
-    await workoutTypeRepo.create(newTypeName.trim());
-    setNewTypeName('');
-    setShowNewTypeModal(false);
   };
 
   return (
@@ -56,11 +44,12 @@ export default function WorkoutsScreen() {
           <Text style={[styles.pretitle, { color: colors.textSecondary }]}>My</Text>
           <Text style={[styles.title, { color: colors.text }]}>Workouts</Text>
         </View>
-        <Pressable
-          style={[styles.secondaryButton, { backgroundColor: colors.backgroundElement }]}
-          onPress={() => setShowNewTypeModal(true)}>
-          <Text style={[styles.secondaryButtonText, { color: colors.text }]}>+ Custom Type</Text>
-        </Pressable>
+        <View style={[styles.statBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Workouts</Text>
+          <Text style={[styles.statValue, { color: colors.text }]}>
+            {history.length}
+          </Text>
+        </View>
       </View>
 
       {/* In Progress banner */}
@@ -113,43 +102,6 @@ export default function WorkoutsScreen() {
         </View>
       </Modal>
 
-      {/* Modal: Create Custom Workout Type */}
-      <Modal visible={showNewTypeModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.dialogTitle, { color: colors.text }]}>Create Custom Workout Routine</Text>
-            <Text style={[styles.dialogSubtitle, { color: colors.textSecondary }]}>
-              Enter a name for your custom split or routine (e.g. "Upper A", "Arm Day").
-            </Text>
-
-            <TextInput
-              style={[
-                styles.textInput,
-                { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border },
-              ]}
-              placeholder="e.g. Arms & Shoulders"
-              placeholderTextColor={colors.textSecondary}
-              value={newTypeName}
-              onChangeText={setNewTypeName}
-              autoFocus
-            />
-
-            <View style={styles.dialogActions}>
-              <Pressable
-                style={[styles.dialogCancelBtn, { backgroundColor: colors.backgroundElement }]}
-                onPress={() => setShowNewTypeModal(false)}>
-                <Text style={[styles.dialogBtnText, { color: colors.textSecondary }]}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.dialogConfirmBtn, { backgroundColor: colors.primary }]}
-                onPress={handleCreateWorkoutType}>
-                <Text style={[styles.dialogBtnText, { color: '#FFFFFF' }]}>Create</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       <View style={{ height: Spacing.six }} />
     </ScrollView>
   );
@@ -169,6 +121,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.three,
   },
+  statBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'flex-end',
+  },
+  statLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 2,
+  },
   pretitle: {
     fontSize: 14,
   },
@@ -176,15 +145,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     marginTop: 2,
-  },
-  secondaryButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  secondaryButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
   },
   ctaButton: {
     paddingVertical: 14,
@@ -249,55 +209,5 @@ const styles = StyleSheet.create({
   historyList: {
     padding: Spacing.three,
     paddingBottom: Spacing.six,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.four,
-  },
-  dialogCard: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 20,
-    padding: Spacing.four,
-    borderWidth: 1,
-  },
-  dialogTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  dialogSubtitle: {
-    fontSize: 13,
-    marginBottom: Spacing.three,
-  },
-  textInput: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    fontSize: 15,
-    marginBottom: Spacing.four,
-  },
-  dialogActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: Spacing.two,
-  },
-  dialogCancelBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  dialogConfirmBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  dialogBtnText: {
-    fontWeight: '700',
-    fontSize: 14,
   },
 });

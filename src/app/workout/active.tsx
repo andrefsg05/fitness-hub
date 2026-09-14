@@ -142,7 +142,7 @@ export default function ActiveWorkoutScreen() {
           <Pressable
             style={[styles.secondaryButton, { backgroundColor: colors.backgroundElement }]}
             onPress={() => setShowNewTypeModal(true)}>
-            <Text style={[styles.secondaryButtonText, { color: colors.text }]}>+ Custom Type</Text>
+            <Text style={[styles.secondaryButtonText, { color: colors.text }]}>+ New Custom Routine</Text>
           </Pressable>
         </View>
 
