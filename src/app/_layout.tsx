@@ -3,6 +3,8 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { ActivityIndicator, useColorScheme, View, Text } from 'react-native';
 
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { DatabaseProvider, useDatabase } from '@/context/DatabaseContext';
 import { Colors } from '@/constants/theme';
@@ -14,6 +16,9 @@ function RootApp() {
   const { isReady, error } = useDatabase();
   const theme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
   const colors = Colors[colorScheme === 'unspecified' ? 'light' : colorScheme];
+
+  const insets = useSafeAreaInsets();
+  const customTopPadding = Math.max(insets.top - 14, 14);
 
   if (error) {
     return (
@@ -35,25 +40,29 @@ function RootApp() {
   return (
     <ThemeProvider value={theme}>
       <AnimatedSplashOverlay />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="workout/active"
-          options={{
-            presentation: 'modal',
-            headerShown: false,
-            animation: 'slide_from_bottom',
-          }}
-        />
-      </Stack>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: customTopPadding }}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="workout/active"
+            options={{
+              presentation: 'modal',
+              headerShown: false,
+              animation: 'slide_from_bottom',
+            }}
+          />
+        </Stack>
+      </View>
     </ThemeProvider>
   );
 }
 
 export default function RootLayout() {
   return (
-    <DatabaseProvider>
-      <RootApp />
-    </DatabaseProvider>
+    <SafeAreaProvider>
+      <DatabaseProvider>
+        <RootApp />
+      </DatabaseProvider>
+    </SafeAreaProvider>
   );
 }
