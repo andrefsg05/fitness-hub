@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.three,
   },
   dragHandle: {
     width: 100,
@@ -175,8 +174,8 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: Spacing.three,
-    right: Spacing.three,
+    top: Spacing.two,
+    left: Spacing.three,
     width: 32,
     height: 32,
     borderRadius: 16,

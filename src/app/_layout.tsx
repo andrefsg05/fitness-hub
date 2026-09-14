@@ -21,7 +21,7 @@ function RootApp() {
   const colors = Colors[colorScheme === 'unspecified' ? 'light' : colorScheme];
 
   const insets = useSafeAreaInsets();
-  const customTopPadding = Math.max(insets.top - 14, 14);
+  const customTopPadding = insets.top;
 
   const [fontsLoaded] = useFonts({
     Aldrich_400Regular,

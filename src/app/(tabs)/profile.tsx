@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useHabits } from '@/hooks/useHabits';
+import { AppHeader } from '@/components/AppHeader';
 import { Colors, Spacing } from '@/constants/theme';
 
 export default function ProfileScreen() {
@@ -76,6 +77,8 @@ export default function ProfileScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
+
+      <AppHeader />
 
       {/* User Header Card */}
       <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>

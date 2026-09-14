@@ -145,7 +145,7 @@ export default function ActiveWorkoutScreen() {
   // State 1: No active workout -> Start Screen
   if (!activeWorkout) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background, padding: Spacing.three, paddingTop: Spacing.five }]}>
+      <View style={[styles.container, { backgroundColor: colors.background, padding: Spacing.three }]}>
         <View style={styles.header}>
           <Pressable onPress={handleBack} style={styles.backBtn}>
             <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>

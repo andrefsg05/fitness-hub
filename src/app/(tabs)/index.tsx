@@ -10,6 +10,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { AppHeader } from '@/components/AppHeader';
 import { ActiveWorkoutBanner } from '@/components/ActiveWorkoutBanner';
 import { WorkoutCard } from '@/components/WorkoutCard';
 import { useWorkouts } from '@/hooks/useWorkouts';
@@ -49,6 +50,8 @@ export default function HomeScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
+
+      <AppHeader />
 
       {/* Header */}
       <View style={styles.header}>
