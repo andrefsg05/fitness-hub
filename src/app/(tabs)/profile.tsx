@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useHabits } from '@/hooks/useHabits';
-import { useDatabase } from '@/context/DatabaseContext';
 import { Colors, Spacing } from '@/constants/theme';
 
 export default function ProfileScreen() {
@@ -23,7 +22,6 @@ export default function ProfileScreen() {
 
   const { user, latestWeight, goals, logWeight, addGoal, toggleGoal, deleteGoal, refresh: refreshProfile } = useUserProfile();
   const { habits, addHabit, toggleActive, deleteHabit, refresh: refreshHabits } = useHabits();
-  const { exerciseRepo } = useDatabase();
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -40,9 +38,7 @@ export default function ProfileScreen() {
   const [habitTime, setHabitTime] = useState('08:00');
   const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekdays' | 'weekly'>('daily');
 
-  const [showExerciseModal, setShowExerciseModal] = useState(false);
-  const [exerciseName, setExerciseName] = useState('');
-  const [exerciseCategory, setExerciseCategory] = useState('Push');
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -73,12 +69,7 @@ export default function ProfileScreen() {
     setShowHabitModal(false);
   };
 
-  const handleAddExercise = async () => {
-    if (!exerciseName.trim() || !exerciseCategory.trim() || !exerciseRepo) return;
-    await exerciseRepo.create(exerciseName.trim(), exerciseCategory.trim());
-    setExerciseName('');
-    setShowExerciseModal(false);
-  };
+
 
   return (
     <ScrollView
@@ -197,15 +188,7 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Custom Exercises Section */}
-      <View style={[styles.sectionHeaderRow, { marginTop: Spacing.four }]}>
-        <Text style={[styles.mainSectionTitle, { color: colors.text }]}>Custom Exercises</Text>
-        <Pressable
-          style={[styles.smallActionBtn, { backgroundColor: colors.backgroundElement }]}
-          onPress={() => setShowExerciseModal(true)}>
-          <Text style={[styles.smallActionTextSecondary, { color: colors.text }]}>+ Add Exercise</Text>
-        </Pressable>
-      </View>
+
 
       {/* Modal: Log Weight */}
       <Modal visible={showWeightModal} transparent animationType="fade">
@@ -295,36 +278,7 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* Modal: Custom Exercise */}
-      <Modal visible={showExerciseModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.dialogTitle, { color: colors.text }]}>Create Custom Exercise</Text>
-            <TextInput
-              style={[styles.textInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-              placeholder="Exercise Name (e.g. Cable Lateral Raise)"
-              placeholderTextColor={colors.textSecondary}
-              value={exerciseName}
-              onChangeText={setExerciseName}
-            />
-            <TextInput
-              style={[styles.textInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-              placeholder="Category (e.g. Push, Pull, Legs)"
-              placeholderTextColor={colors.textSecondary}
-              value={exerciseCategory}
-              onChangeText={setExerciseCategory}
-            />
-            <View style={styles.dialogActions}>
-              <Pressable style={styles.dialogCancelBtn} onPress={() => setShowExerciseModal(false)}>
-                <Text style={{ color: colors.textSecondary }}>Cancel</Text>
-              </Pressable>
-              <Pressable style={[styles.dialogConfirmBtn, { backgroundColor: colors.primary }]} onPress={handleAddExercise}>
-                <Text style={{ color: '#FFF', fontWeight: '700' }}>Save</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+
 
       <View style={{ height: Spacing.six }} />
     </ScrollView>

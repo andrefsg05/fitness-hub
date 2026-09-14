@@ -45,6 +45,10 @@ export default function ActiveWorkoutScreen() {
   const [selectedWorkoutTypeId, setSelectedWorkoutTypeId] = useState<string>('');
   const [notes, setNotes] = useState('');
 
+  const [showCreateExerciseModal, setShowCreateExerciseModal] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState('');
+  const [newExerciseCategory, setNewExerciseCategory] = useState('');
+
   useEffect(() => {
     async function loadInitialData() {
       if (workoutTypeRepo && exerciseRepo) {
@@ -82,6 +86,16 @@ export default function ActiveWorkoutScreen() {
   const handleAddExerciseToWorkout = async (exerciseId: string) => {
     await addExercise(exerciseId);
     setShowAddExerciseModal(false);
+  };
+
+  const handleCreateExercise = async () => {
+    if (!newExerciseName.trim() || !newExerciseCategory.trim() || !exerciseRepo) return;
+    await exerciseRepo.create(newExerciseName.trim(), newExerciseCategory.trim());
+    const updated = await exerciseRepo.getAll();
+    setAvailableExercises(updated);
+    setNewExerciseName('');
+    setNewExerciseCategory('');
+    setShowCreateExerciseModal(false);
   };
 
   const handleAddSetToExercise = async (workoutExerciseId: string, currentSetsCount: number, lastWeight: number, lastReps: number) => {
@@ -352,6 +366,16 @@ export default function ActiveWorkoutScreen() {
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={styles.exerciseSelectionList}>
+            {/* Create New Exercise Button */}
+            <Pressable
+              style={[styles.createExerciseBtn, { borderColor: colors.primary }]}
+              onPress={() => setShowCreateExerciseModal(true)}>
+              <Text style={[styles.createExerciseBtnText, { color: colors.primary }]}>＋ Create New Exercise</Text>
+            </Pressable>
+
+            {/* Separator */}
+            <View style={[styles.exerciseDivider, { backgroundColor: colors.border }]} />
+
             {filteredExercises.map((ex) => (
               <Pressable
                 key={ex.id}
@@ -365,6 +389,57 @@ export default function ActiveWorkoutScreen() {
               </Pressable>
             ))}
           </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Modal: Create Custom Exercise */}
+      <Modal visible={showCreateExerciseModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.dialogTitle, { color: colors.text }]}>Create Custom Exercise</Text>
+            <Text style={[styles.dialogSubtitle, { color: colors.textSecondary }]}>
+              Add a personalised exercise to your library.
+            </Text>
+
+            <TextInput
+              style={[
+                styles.textInput,
+                { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border },
+              ]}
+              placeholder="Exercise Name (e.g. Cable Lateral Raise)"
+              placeholderTextColor={colors.textSecondary}
+              value={newExerciseName}
+              onChangeText={setNewExerciseName}
+              autoFocus
+            />
+            <TextInput
+              style={[
+                styles.textInput,
+                { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border },
+              ]}
+              placeholder="Category (e.g. Push, Pull, Legs)"
+              placeholderTextColor={colors.textSecondary}
+              value={newExerciseCategory}
+              onChangeText={setNewExerciseCategory}
+            />
+
+            <View style={styles.dialogActions}>
+              <Pressable
+                style={[styles.dialogCancelBtn, { backgroundColor: colors.backgroundElement }]}
+                onPress={() => {
+                  setNewExerciseName('');
+                  setNewExerciseCategory('');
+                  setShowCreateExerciseModal(false);
+                }}>
+                <Text style={[styles.dialogBtnText, { color: colors.textSecondary }]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.dialogConfirmBtn, { backgroundColor: colors.primary }]}
+                onPress={handleCreateExercise}>
+                <Text style={[styles.dialogBtnText, { color: '#FFFFFF' }]}>Create</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
       </Modal>
 
@@ -615,6 +690,21 @@ const styles = StyleSheet.create({
   exerciseSelectionList: {
     padding: Spacing.three,
     gap: Spacing.two,
+  },
+  createExerciseBtn: {
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  createExerciseBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  exerciseDivider: {
+    height: 1,
+    marginVertical: Spacing.two,
   },
   exerciseSelectItem: {
     flexDirection: 'row',

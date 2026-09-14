@@ -58,6 +58,14 @@ function RootApp() {
               animation: 'slide_from_bottom',
             }}
           />
+          <Stack.Screen
+            name="workout/[id]"
+            options={{
+              presentation: 'modal',
+              headerShown: false,
+              animation: 'slide_from_bottom',
+            }}
+          />
         </Stack>
       </View>
     </ThemeProvider>

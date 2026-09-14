@@ -1,14 +1,17 @@
 import React from 'react';
-import { StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { useRouter } from 'expo-router';
 import { WorkoutSummary } from '@/types';
 import { Colors, Spacing } from '@/constants/theme';
 
 interface WorkoutCardProps {
   workout: WorkoutSummary;
   showDateHeader?: boolean;
+  onPress?: () => void;
 }
 
-export function WorkoutCard({ workout }: WorkoutCardProps) {
+export function WorkoutCard({ workout, onPress }: WorkoutCardProps) {
+  const router = useRouter();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
@@ -18,8 +21,22 @@ export function WorkoutCard({ workout }: WorkoutCardProps) {
     day: 'numeric',
   });
 
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    } else {
+      router.push(`/workout/${workout.id}`);
+    }
+  };
+
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <Pressable
+      onPress={handlePress}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+      ]}
+    >
       <View style={styles.header}>
         <View>
           <Text style={[styles.typeName, { color: colors.text }]}>{workout.workout_type_name}</Text>
@@ -43,7 +60,7 @@ export function WorkoutCard({ workout }: WorkoutCardProps) {
           <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Volume</Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
