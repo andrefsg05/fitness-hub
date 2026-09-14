@@ -54,7 +54,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View>
           <Text style={[styles.greeting, { color: colors.textSecondary }]}>Welcome back,</Text>
-          <Text style={[styles.userName, { color: colors.text }]}>{user?.name ?? 'Athlete'} 👋</Text>
+          <Text style={[styles.userName, { color: colors.text }]}>{user?.name ?? 'Athlete'}</Text>
         </View>
 
         {latestWeight && (
@@ -82,7 +82,7 @@ export default function HomeScreen() {
 
       {/* Today's Habits & Reminders */}
       <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Habits & Reminders</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Reminders</Text>
         <Pressable onPress={() => router.push('/profile')}>
           <Text style={[styles.sectionLink, { color: colors.primary }]}>Manage</Text>
         </Pressable>
@@ -127,7 +127,7 @@ export default function HomeScreen() {
 
       {/* Last Workout Summary */}
       <View style={[styles.sectionHeader, { marginTop: Spacing.four }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Last Completed Workout</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Last Workout</Text>
         <Pressable onPress={() => router.push('/workouts')}>
           <Text style={[styles.sectionLink, { color: colors.primary }]}>All Workouts</Text>
         </Pressable>

@@ -52,7 +52,10 @@ export default function WorkoutsScreen() {
 
       {/* Title */}
       <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: colors.text }]}>Workouts</Text>
+        <View>
+          <Text style={[styles.pretitle, { color: colors.textSecondary }]}>My</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Workouts</Text>
+        </View>
         <Pressable
           style={[styles.secondaryButton, { backgroundColor: colors.backgroundElement }]}
           onPress={() => setShowNewTypeModal(true)}>
@@ -70,15 +73,15 @@ export default function WorkoutsScreen() {
           { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1 },
         ]}
         onPress={() => router.push('/workout/active')}>
-        <Text style={styles.ctaButtonText}>+ Record New Workout</Text>
+        <Text style={styles.ctaButtonText}>+ Start New Workout</Text>
       </Pressable>
 
       {/* Last 3 Workouts Section */}
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Workouts</Text>
-        <Text style={[styles.countBadge, { color: colors.textSecondary }]}>
-          {recentWorkouts.length} of 3
-        </Text>
+        <Pressable onPress={() => setShowHistoryModal(true)} hitSlop={8}>
+          <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
+        </Pressable>
       </View>
 
       {isLoading ? (
@@ -91,17 +94,6 @@ export default function WorkoutsScreen() {
         </View>
       ) : (
         recentWorkouts.map((workout) => <WorkoutCard key={workout.id} workout={workout} />)
-      )}
-
-      {/* View Full History Button */}
-      {history.length > 0 && (
-        <Pressable
-          style={[styles.historyButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => setShowHistoryModal(true)}>
-          <Text style={[styles.historyButtonText, { color: colors.primary }]}>
-            📜 View Full Workout History ({history.length} logged)
-          </Text>
-        </Pressable>
       )}
 
       {/* Modal: Full Workout History */}
@@ -125,7 +117,7 @@ export default function WorkoutsScreen() {
       <Modal visible={showNewTypeModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.dialogTitle, { color: colors.text }]}>Create Custom Workout Type</Text>
+            <Text style={[styles.dialogTitle, { color: colors.text }]}>Create Custom Workout Routine</Text>
             <Text style={[styles.dialogSubtitle, { color: colors.textSecondary }]}>
               Enter a name for your custom split or routine (e.g. "Upper A", "Arm Day").
             </Text>
@@ -177,9 +169,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.three,
   },
+  pretitle: {
+    fontSize: 14,
+  },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
+    marginTop: 2,
   },
   secondaryButton: {
     paddingVertical: 6,
@@ -218,20 +214,9 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
   },
-  countBadge: {
-    fontSize: 13,
-  },
-  historyButton: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    marginTop: Spacing.two,
-  },
-  historyButtonText: {
+  viewAllText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   emptyCard: {
     borderRadius: 14,

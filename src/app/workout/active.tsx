@@ -40,6 +40,8 @@ export default function ActiveWorkoutScreen() {
   const [workoutTypes, setWorkoutTypes] = useState<WorkoutType[]>([]);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+  const [showNewTypeModal, setShowNewTypeModal] = useState(false);
+  const [newTypeName, setNewTypeName] = useState('');
   const [selectedWorkoutTypeId, setSelectedWorkoutTypeId] = useState<string>('');
   const [notes, setNotes] = useState('');
 
@@ -59,6 +61,18 @@ export default function ActiveWorkoutScreen() {
     }
     loadInitialData();
   }, [workoutTypeRepo, exerciseRepo]);
+
+  const handleCreateWorkoutType = async () => {
+    if (!newTypeName.trim() || !workoutTypeRepo) return;
+    const created = await workoutTypeRepo.create(newTypeName.trim());
+    const updatedTypes = await workoutTypeRepo.getAll();
+    setWorkoutTypes(updatedTypes);
+    if (created?.id) {
+      setSelectedWorkoutTypeId(created.id);
+    }
+    setNewTypeName('');
+    setShowNewTypeModal(false);
+  };
 
   const handleStartWorkout = async () => {
     if (!selectedWorkoutTypeId) return;
@@ -118,11 +132,18 @@ export default function ActiveWorkoutScreen() {
   if (!activeWorkout) {
     return (
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Pressable onPress={handleBack} style={styles.backBtn}>
-            <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.header}>
+            <Pressable onPress={handleBack} style={styles.backBtn}>
+              <Text style={[styles.backText, { color: colors.primary }]}>← Back</Text>
+            </Pressable>
+            <Text style={[styles.title, { color: colors.text }]}>New Workout</Text>
+          </View>
+          <Pressable
+            style={[styles.secondaryButton, { backgroundColor: colors.backgroundElement }]}
+            onPress={() => setShowNewTypeModal(true)}>
+            <Text style={[styles.secondaryButtonText, { color: colors.text }]}>+ Custom Type</Text>
           </Pressable>
-          <Text style={[styles.title, { color: colors.text }]}>Start Workout</Text>
         </View>
 
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -156,6 +177,43 @@ export default function ActiveWorkoutScreen() {
           onPress={handleStartWorkout}>
           <Text style={styles.primaryBtnText}>Begin Workout Session 🚀</Text>
         </Pressable>
+
+        {/* Modal: Create Custom Workout Type */}
+        <Modal visible={showNewTypeModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.dialogTitle, { color: colors.text }]}>Create Custom Workout Routine</Text>
+              <Text style={[styles.dialogSubtitle, { color: colors.textSecondary }]}>
+                Enter a name for your custom split or routine (e.g. "Upper A", "Arm Day").
+              </Text>
+
+              <TextInput
+                style={[
+                  styles.textInput,
+                  { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border },
+                ]}
+                placeholder="e.g. Arms & Shoulders"
+                placeholderTextColor={colors.textSecondary}
+                value={newTypeName}
+                onChangeText={setNewTypeName}
+                autoFocus
+              />
+
+              <View style={styles.dialogActions}>
+                <Pressable
+                  style={[styles.dialogCancelBtn, { backgroundColor: colors.backgroundElement }]}
+                  onPress={() => setShowNewTypeModal(false)}>
+                  <Text style={[styles.dialogBtnText, { color: colors.textSecondary }]}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.dialogConfirmBtn, { backgroundColor: colors.primary }]}
+                  onPress={handleCreateWorkoutType}>
+                  <Text style={[styles.dialogBtnText, { color: '#FFFFFF' }]}>Create</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     );
   }
@@ -330,7 +388,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.four,
+    marginBottom: 0,
   },
   backBtn: {
     marginBottom: Spacing.two,
@@ -538,5 +596,64 @@ const styles = StyleSheet.create({
   exerciseSelectCategory: {
     fontSize: 12,
     marginTop: 2,
+  },
+  secondaryButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  secondaryButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.four,
+  },
+  dialogCard: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: Spacing.four,
+    borderWidth: 1,
+  },
+  dialogTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  dialogSubtitle: {
+    fontSize: 13,
+    marginBottom: Spacing.three,
+  },
+  textInput: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    fontSize: 15,
+    marginBottom: Spacing.four,
+  },
+  dialogActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: Spacing.two,
+  },
+  dialogCancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  dialogConfirmBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  dialogBtnText: {
+    fontWeight: '700',
+    fontSize: 14,
   },
 });
