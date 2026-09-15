@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppHeader } from '@/components/AppHeader';
-import { ActiveWorkoutBanner } from '@/components/ActiveWorkoutBanner';
+import { WorkoutActionBanner } from '@/components/WorkoutActionBanner';
 import { WorkoutCard } from '@/components/WorkoutCard';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { Colors, Spacing } from '@/constants/theme';
@@ -55,18 +55,8 @@ export default function WorkoutsScreen() {
         </View>
       </View>
 
-      {/* In Progress banner */}
-      <ActiveWorkoutBanner />
-
-      {/* Start Workout Button */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.ctaButton,
-          { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1 },
-        ]}
-        onPress={() => router.push('/workout/active')}>
-        <Text style={styles.ctaButtonText}>+ Start New Workout</Text>
-      </Pressable>
+      {/* Workout Action (Start New or Resume Active) */}
+      <WorkoutActionBanner />
 
       {/* Last 3 Workouts Section */}
       <View style={styles.sectionHeader}>
@@ -148,23 +138,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     marginTop: 2,
-  },
-  ctaButton: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: Spacing.two,
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  ctaButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
   },
   sectionHeader: {
     flexDirection: 'row',
