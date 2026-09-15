@@ -186,6 +186,9 @@ export default function ProfileScreen() {
                 onValueChange={(val) => toggleActive(h.id, val)}
                 trackColor={{ false: colors.border, true: colors.accent }}
               />
+              <Pressable onPress={() => deleteHabit(h.id)} style={{ padding: 6, marginLeft: 8 }}>
+                <Text style={{ color: colors.danger, fontSize: 13 }}>✕</Text>
+              </Pressable>
             </View>
           ))}
         </View>
