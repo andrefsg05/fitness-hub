@@ -9,7 +9,7 @@ import {
 } from '@/types';
 
 export class WorkoutRepository {
-  constructor(private db: SQLiteDatabase) {}
+  constructor(private db: SQLiteDatabase) { }
 
   // 1. Live / In-Progress Workout lifecycle
   async getActiveWorkout(): Promise<WorkoutWithDetails | null> {
@@ -64,7 +64,7 @@ export class WorkoutRepository {
   // 2. Managing exercises and sets inside a workout
   async addExerciseToWorkout(workoutId: string, exerciseId: string): Promise<WorkoutExercise> {
     const id = `we-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
-    
+
     // Find current max order index
     const maxOrder = await this.db.getFirstAsync<{ max_order: number | null }>(
       'SELECT MAX(order_index) as max_order FROM workout_exercises WHERE workout_id = ?',
@@ -133,6 +133,25 @@ export class WorkoutRepository {
   async getLastCompletedWorkout(): Promise<WorkoutSummary | null> {
     const workouts = await this.getRecentWorkouts(1);
     return workouts.length > 0 ? workouts[0] : null;
+  }
+
+  async getLastCompletedWorkoutByType(
+    workoutTypeId: string,
+    excludeWorkoutId?: string
+  ): Promise<WorkoutWithDetails | null> {
+    const query = excludeWorkoutId
+      ? "SELECT id FROM workouts WHERE workout_type_id = ? AND status = 'completed' AND id != ? ORDER BY date DESC, created_at DESC LIMIT 1"
+      : "SELECT id FROM workouts WHERE workout_type_id = ? AND status = 'completed' ORDER BY date DESC, created_at DESC LIMIT 1";
+
+    const row = excludeWorkoutId
+      ? await this.db.getFirstAsync<{ id: string }>(query, workoutTypeId, excludeWorkoutId)
+      : await this.db.getFirstAsync<{ id: string }>(query, workoutTypeId);
+
+    if (!row) {
+      return null;
+    }
+
+    return await this.getWorkoutDetails(row.id);
   }
 
   async getRecentWorkouts(limit: number = 3): Promise<WorkoutSummary[]> {

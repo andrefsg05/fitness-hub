@@ -14,8 +14,9 @@ import {
 import { useRouter } from 'expo-router';
 import { useActiveWorkout } from '@/hooks/useActiveWorkout';
 import { useDatabase } from '@/context/DatabaseContext';
-import { Exercise, WorkoutType } from '@/types';
+import { Exercise, WorkoutType, WorkoutWithDetails } from '@/types';
 import { Colors, Spacing } from '@/constants/theme';
+import { LastWorkoutDrawer } from '@/components/LastWorkoutDrawer';
 
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
@@ -35,10 +36,11 @@ export default function ActiveWorkoutScreen() {
     discardWorkout,
   } = useActiveWorkout();
 
-  const { workoutTypeRepo, exerciseRepo } = useDatabase();
+  const { workoutRepo, workoutTypeRepo, exerciseRepo } = useDatabase();
 
   const [workoutTypes, setWorkoutTypes] = useState<WorkoutType[]>([]);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
+  const [lastWorkout, setLastWorkout] = useState<WorkoutWithDetails | null>(null);
   const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
   const [showNewTypeModal, setShowNewTypeModal] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
@@ -65,6 +67,31 @@ export default function ActiveWorkoutScreen() {
     }
     loadInitialData();
   }, [workoutTypeRepo, exerciseRepo]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLastWorkout() {
+      if (!workoutRepo || !activeWorkout) {
+        setLastWorkout(null);
+        return;
+      }
+      try {
+        const prev = await workoutRepo.getLastCompletedWorkoutByType(
+          activeWorkout.workout_type_id,
+          activeWorkout.id
+        );
+        if (isMounted) {
+          setLastWorkout(prev);
+        }
+      } catch (err) {
+        console.error('Failed to load last workout:', err);
+      }
+    }
+    loadLastWorkout();
+    return () => {
+      isMounted = false;
+    };
+  }, [workoutRepo, activeWorkout?.workout_type_id, activeWorkout?.id]);
 
   const handleCreateWorkoutType = async () => {
     if (!newTypeName.trim() || !workoutTypeRepo) return;
@@ -246,6 +273,11 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+      {/* Top Pull-Down Drawer: Last Workout Details */}
+      {lastWorkout && (
+        <LastWorkoutDrawer workout={lastWorkout} />
+      )}
+
       {/* Top Header */}
       <View style={styles.headerRow}>
         <Text style={[styles.activeTag, { color: colors.accent }]}>● LIVE</Text>
@@ -454,7 +486,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.three,
-    paddingTop: Spacing.five,
+    paddingTop: Spacing.three,
   },
   center: {
     flex: 1,
