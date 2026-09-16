@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +13,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useUserStore } from '@/stores/useUserStore';
 import { useHabitsStore } from '@/stores/useHabitsStore';
 import { AppHeader } from '@/components/AppHeader';
@@ -50,10 +52,24 @@ export default function ProfileScreen() {
 
   const [showHabitModal, setShowHabitModal] = useState(false);
   const [habitName, setHabitName] = useState('');
-  const [habitTime, setHabitTime] = useState('08:00');
+  const [habitDate, setHabitDate] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(8, 0, 0, 0);
+    return d;
+  });
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekdays' | 'weekly'>('daily');
 
+  const formattedHabitTime = `${String(habitDate.getHours()).padStart(2, '0')}:${String(habitDate.getMinutes()).padStart(2, '0')}`;
 
+  const onTimeChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    if (selectedDate && (event.type === 'set' || Platform.OS === 'ios')) {
+      setHabitDate(selectedDate);
+    }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -79,8 +95,12 @@ export default function ProfileScreen() {
 
   const handleAddHabit = async () => {
     if (!habitName.trim()) return;
-    await addHabit(habitName.trim(), habitFrequency, habitTime.trim() || null);
+    await addHabit(habitName.trim(), habitFrequency, formattedHabitTime);
     setHabitName('');
+    const d = new Date();
+    d.setHours(8, 0, 0, 0);
+    setHabitDate(d);
+    setShowTimePicker(false);
     setShowHabitModal(false);
   };
 
@@ -272,6 +292,8 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.dialogTitle, { color: colors.text }]}>New Habit / Reminder</Text>
+
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Habit Name</Text>
             <TextInput
               style={[styles.textInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
               placeholder="e.g. Drink 3L Water"
@@ -279,13 +301,33 @@ export default function ProfileScreen() {
               value={habitName}
               onChangeText={setHabitName}
             />
-            <TextInput
-              style={[styles.textInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-              placeholder="Reminder Time (e.g. 08:30)"
-              placeholderTextColor={colors.textSecondary}
-              value={habitTime}
-              onChangeText={setHabitTime}
-            />
+
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Reminder Time</Text>
+            <Pressable
+              style={[
+                styles.timePickerButton,
+                { backgroundColor: colors.backgroundElement, borderColor: colors.border }
+              ]}
+              onPress={() => setShowTimePicker(true)}
+            >
+              <Text style={{ fontSize: 18 }}>⏰</Text>
+              <Text style={[styles.timePickerText, { color: colors.text }]}>
+                {formattedHabitTime}
+              </Text>
+            </Pressable>
+
+            {/* DateTimePicker on Android (modal dialog) or inline/spinner */}
+            {showTimePicker && (
+              <DateTimePicker
+                value={habitDate}
+                mode="time"
+                is24Hour={true}
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onTimeChange}
+                textColor={colors.text}
+              />
+            )}
+
             <View style={styles.dialogActions}>
               <Pressable style={styles.dialogCancelBtn} onPress={() => setShowHabitModal(false)}>
                 <Text style={{ color: colors.textSecondary }}>Cancel</Text>
@@ -460,6 +502,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     fontSize: 15,
     marginBottom: Spacing.three,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  timePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: Spacing.three,
+    gap: Spacing.two,
+  },
+  timePickerText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   dialogActions: {
     flexDirection: 'row',
