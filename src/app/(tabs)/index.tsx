@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,9 +13,10 @@ import { useRouter } from 'expo-router';
 import { AppHeader } from '@/components/AppHeader';
 import { WorkoutActionBanner } from '@/components/WorkoutActionBanner';
 import { WorkoutCard } from '@/components/WorkoutCard';
-import { useWorkouts } from '@/hooks/useWorkouts';
-import { useHabits } from '@/hooks/useHabits';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useWorkoutsStore } from '@/stores/useWorkoutsStore';
+import { useHabitsStore } from '@/stores/useHabitsStore';
+import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
+import { useUserStore } from '@/stores/useUserStore';
 import { Colors, Spacing } from '@/constants/theme';
 
 export default function HomeScreen() {
@@ -23,16 +24,24 @@ export default function HomeScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
-  const { lastWorkout, isLoading: workoutsLoading, refresh: refreshWorkouts } = useWorkouts();
-  const { activeHabits, isLoading: habitsLoading, toggleActive, refresh: refreshHabits } = useHabits();
-  const { user, latestWeight, isLoading: profileLoading, refresh: refreshProfile } = useUserProfile();
+  const { lastWorkout, isLoading: workoutsLoading, fetchWorkouts } = useWorkoutsStore();
+  const { activeHabits, isLoading: habitsLoading, fetchHabits } = useHabitsStore();
+  const fetchActiveWorkout = useActiveWorkoutStore((state) => state.fetchActiveWorkout);
+  const { user, latestWeight, isLoading: profileLoading, fetchProfile } = useUserStore();
 
   const [refreshing, setRefreshing] = useState(false);
   const [completedHabitIds, setCompletedHabitIds] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
+    fetchWorkouts();
+    fetchHabits();
+    fetchActiveWorkout();
+    fetchProfile();
+  }, [fetchWorkouts, fetchHabits, fetchActiveWorkout, fetchProfile]);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refreshWorkouts(), refreshHabits(), refreshProfile()]);
+    await Promise.all([fetchWorkouts(), fetchHabits(), fetchActiveWorkout(), fetchProfile()]);
     setRefreshing(false);
   };
 

@@ -14,7 +14,8 @@ import { useRouter } from 'expo-router';
 import { AppHeader } from '@/components/AppHeader';
 import { WorkoutActionBanner } from '@/components/WorkoutActionBanner';
 import { WorkoutCard } from '@/components/WorkoutCard';
-import { useWorkouts } from '@/hooks/useWorkouts';
+import { useWorkoutsStore } from '@/stores/useWorkoutsStore';
+import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
 import { Colors, Spacing } from '@/constants/theme';
 
 export default function WorkoutsScreen() {
@@ -22,14 +23,20 @@ export default function WorkoutsScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
-  const { recentWorkouts, history, isLoading, refresh } = useWorkouts();
+  const { recentWorkouts, history, isLoading, fetchWorkouts } = useWorkoutsStore();
+  const fetchActiveWorkout = useActiveWorkoutStore((state) => state.fetchActiveWorkout);
 
   const [refreshing, setRefreshing] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
+  React.useEffect(() => {
+    fetchWorkouts();
+    fetchActiveWorkout();
+  }, [fetchWorkouts, fetchActiveWorkout]);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await refresh();
+    await Promise.all([fetchWorkouts(), fetchActiveWorkout()]);
     setRefreshing(false);
   };
 

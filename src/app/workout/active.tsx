@@ -12,7 +12,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useActiveWorkout } from '@/hooks/useActiveWorkout';
+import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
 import { useDatabase } from '@/context/DatabaseContext';
 import { Exercise, WorkoutType, WorkoutWithDetails } from '@/types';
 import { Colors, Spacing } from '@/constants/theme';
@@ -26,6 +26,7 @@ export default function ActiveWorkoutScreen() {
   const {
     activeWorkout,
     isLoading,
+    fetchActiveWorkout,
     startWorkout,
     addExercise,
     removeExercise,
@@ -34,7 +35,7 @@ export default function ActiveWorkoutScreen() {
     deleteSet,
     finishWorkout,
     discardWorkout,
-  } = useActiveWorkout();
+  } = useActiveWorkoutStore();
 
   const { workoutRepo, workoutTypeRepo, exerciseRepo } = useDatabase();
 
@@ -53,6 +54,7 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     async function loadInitialData() {
+      fetchActiveWorkout();
       if (workoutTypeRepo && exerciseRepo) {
         const [types, exs] = await Promise.all([
           workoutTypeRepo.getAll(),
@@ -66,7 +68,7 @@ export default function ActiveWorkoutScreen() {
       }
     }
     loadInitialData();
-  }, [workoutTypeRepo, exerciseRepo]);
+  }, [workoutTypeRepo, exerciseRepo, fetchActiveWorkout]);
 
   useEffect(() => {
     let isMounted = true;

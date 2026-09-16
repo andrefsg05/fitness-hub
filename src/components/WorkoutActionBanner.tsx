@@ -1,21 +1,14 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useActiveWorkout } from '@/hooks/useActiveWorkout';
+import { useRouter } from 'expo-router';
+import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
 import { Colors, Spacing } from '@/constants/theme';
 
 export function WorkoutActionBanner() {
-  const { activeWorkout, refresh } = useActiveWorkout();
+  const activeWorkout = useActiveWorkoutStore((state) => state.activeWorkout);
   const router = useRouter();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
-  // Refresh active workout whenever the host screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      refresh();
-    }, [refresh])
-  );
 
   const handlePress = () => {
     router.push('/workout/active');

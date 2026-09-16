@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -12,8 +12,8 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useHabits } from '@/hooks/useHabits';
+import { useUserStore } from '@/stores/useUserStore';
+import { useHabitsStore } from '@/stores/useHabitsStore';
 import { AppHeader } from '@/components/AppHeader';
 import { Colors, Spacing } from '@/constants/theme';
 
@@ -21,10 +21,24 @@ export default function ProfileScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
-  const { user, latestWeight, goals, logWeight, addGoal, toggleGoal, deleteGoal, refresh: refreshProfile } = useUserProfile();
-  const { habits, addHabit, toggleActive, deleteHabit, refresh: refreshHabits } = useHabits();
+  const {
+    user,
+    latestWeight,
+    goals,
+    logWeight,
+    addGoal,
+    toggleGoal,
+    deleteGoal,
+    fetchProfile,
+  } = useUserStore();
+  const { habits, addHabit, toggleActive, deleteHabit, fetchHabits } = useHabitsStore();
 
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchProfile();
+    fetchHabits();
+  }, [fetchProfile, fetchHabits]);
 
   // Modals state
   const [showWeightModal, setShowWeightModal] = useState(false);
@@ -43,7 +57,7 @@ export default function ProfileScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refreshProfile(), refreshHabits()]);
+    await Promise.all([fetchProfile(), fetchHabits()]);
     setRefreshing(false);
   };
 
