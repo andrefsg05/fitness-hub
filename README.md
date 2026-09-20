@@ -9,9 +9,9 @@ Built with an **offline-first** approach, it serves as a straightforward and rel
 ## Features (Core MVP)
 
 - **Workout Logging:** Easily record workouts, exercises, sets, reps, and weights used with custom notes.
-- **Progress & Evolution:** Track personal records (PRs), exercise history, and training frequency over time.
-- **Body Weight & Metrics:** Log body weight updates and track physical changes.
-- **Habits & Reminders:** Set up local notifications and reminders for daily fitness habits (drinking water, taking creatine, weighing in, workout sessions).
+- **Progress & Evolution:** Track workouts and exercises history.
+- **Body Weight & Metrics:** Log body weight updates.
+- **Habits & Reminders:** Set up local notifications and reminders for daily fitness habits (e.g. taking creatine, weighing in, workout sessions).
 
 ---
 

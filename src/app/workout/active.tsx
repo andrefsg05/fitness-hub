@@ -407,7 +407,7 @@ export default function ActiveWorkoutScreen() {
       <Pressable
         style={[styles.finishBtn, { backgroundColor: colors.accent }]}
         onPress={handleFinish}>
-        <Text style={styles.finishBtnText}>Finish Workout ✓</Text>
+        <Text style={styles.finishBtnText}>Finish Workout</Text>
       </Pressable>
 
       {/* Modal: Select Exercise */}
