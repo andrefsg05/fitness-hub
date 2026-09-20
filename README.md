@@ -9,9 +9,9 @@ Built with an **offline-first** approach, it serves as a straightforward and rel
 ## Showcase - MVP
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/andrefsg05/showcasing-assets/main/onboarding-fhub.gif" width="30%" />
-  <img src="https://raw.githubusercontent.com/andrefsg05/showcasing-assets/main/workout-fhub.gif" width="30%" />
-  <img src="https://raw.githubusercontent.com/andrefsg05/showcasing-assets/main/reminder-fhub.gif" width="30%" />
+  <img src="https://raw.githubusercontent.com/andrefsg05/showcasing-assets/main/onboarding_fhub.gif" width="30%" />
+  <img src="https://raw.githubusercontent.com/andrefsg05/showcasing-assets/main/workout_fhub.gif" width="30%" />
+  <img src="https://raw.githubusercontent.com/andrefsg05/showcasing-assets/main/reminder_fhub.gif" width="30%" />
 </div>
 
 ---
