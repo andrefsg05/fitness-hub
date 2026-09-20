@@ -12,6 +12,22 @@ export class UserRepository {
     );
   }
 
+  async createUser(name: string, targetWeight: number | null = null, userId: string = DEFAULT_USER_ID): Promise<User> {
+    const trimmedName = name.trim();
+    await this.db.runAsync(
+      'INSERT OR REPLACE INTO users (id, name, target_weight) VALUES (?, ?, ?)',
+      userId,
+      trimmedName,
+      targetWeight
+    );
+    return {
+      id: userId,
+      name: trimmedName,
+      target_weight: targetWeight,
+      created_at: new Date().toISOString(),
+    };
+  }
+
   async updateProfile(userId: string = DEFAULT_USER_ID, name: string, targetWeight: number | null): Promise<void> {
     await this.db.runAsync(
       'UPDATE users SET name = ?, target_weight = ? WHERE id = ?',

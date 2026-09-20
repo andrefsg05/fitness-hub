@@ -64,68 +64,6 @@ export const SEED_EXERCISES = [
 export const DEFAULT_USER_ID = 'user-primary';
 
 export async function seedDatabase(db: SQLiteDatabase): Promise<void> {
-  // Seed default user if not exists
-  const existingUser = await db.getFirstAsync<{ id: string }>('SELECT id FROM users LIMIT 1');
-  if (!existingUser) {
-    await db.runAsync(
-      'INSERT INTO users (id, name, target_weight) VALUES (?, ?, ?)',
-      DEFAULT_USER_ID,
-      'Athlete',
-      78.0
-    );
-
-    // Seed initial goal
-    await db.runAsync(
-      'INSERT INTO goals (id, user_id, title, target_date, is_completed) VALUES (?, ?, ?, ?, ?)',
-      'goal-1',
-      DEFAULT_USER_ID,
-      'Bench Press 100 kg',
-      '2026-12-31',
-      0
-    );
-
-    // Seed initial habits
-    await db.runAsync(
-      'INSERT INTO habits (id, user_id, name, frequency, reminder_time, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-      'habit-water',
-      DEFAULT_USER_ID,
-      'Drink 3L Water',
-      'daily',
-      '09:00',
-      1
-    );
-
-    await db.runAsync(
-      'INSERT INTO habits (id, user_id, name, frequency, reminder_time, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-      'habit-creatine',
-      DEFAULT_USER_ID,
-      'Take Creatine (5g)',
-      'daily',
-      '12:30',
-      1
-    );
-
-    await db.runAsync(
-      'INSERT INTO habits (id, user_id, name, frequency, reminder_time, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-      'habit-weigh',
-      DEFAULT_USER_ID,
-      'Morning Weigh-In',
-      'daily',
-      '07:30',
-      1
-    );
-
-    // Seed initial bodyweight log
-    const today = new Date().toISOString().split('T')[0];
-    await db.runAsync(
-      'INSERT INTO bodyweight_logs (id, user_id, weight, date) VALUES (?, ?, ?, ?)',
-      'bw-initial',
-      DEFAULT_USER_ID,
-      82.5,
-      today
-    );
-  }
-
   // Seed workout types
   for (const type of SEED_WORKOUT_TYPES) {
     await db.runAsync(

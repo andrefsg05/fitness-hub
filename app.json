@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "fitness-hub",
-    "slug": "fitness-hub",
+    "name": "FitnessHub",
+    "slug": "FitnessHub",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

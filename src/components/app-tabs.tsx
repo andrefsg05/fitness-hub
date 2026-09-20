@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { Pressable, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/theme';
@@ -18,6 +18,12 @@ export default function AppTabs() {
           backgroundColor: colors.background,
           borderTopColor: colors.border,
         },
+        tabBarButton: ({ ref: _ref, ...props }) => (
+          <Pressable
+            {...props}
+            android_ripple={null}
+          />
+        ),
       }}>
       <Tabs.Screen
         name="index"

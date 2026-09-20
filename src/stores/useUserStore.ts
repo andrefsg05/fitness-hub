@@ -9,7 +9,9 @@ interface UserState {
   weightHistory: BodyweightLog[];
   goals: Goal[];
   isLoading: boolean;
+  isLoaded: boolean;
   fetchProfile: () => Promise<void>;
+  completeOnboarding: (name: string, currentWeight: number) => Promise<void>;
   updateProfile: (name: string, targetWeight: number | null) => Promise<void>;
   logWeight: (weight: number, date?: string) => Promise<void>;
   addGoal: (title: string, targetDate?: string | null) => Promise<void>;
@@ -28,6 +30,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   weightHistory: [],
   goals: [],
   isLoading: false,
+  isLoaded: false,
 
   fetchProfile: async () => {
     try {
@@ -48,6 +51,18 @@ export const useUserStore = create<UserState>((set, get) => ({
       });
     } catch (err) {
       console.error('Error fetching user profile in store:', err);
+    } finally {
+      set({ isLoading: false, isLoaded: true });
+    }
+  },
+
+  completeOnboarding: async (name: string, currentWeight: number) => {
+    set({ isLoading: true });
+    try {
+      const repo = await getRepo();
+      await repo.createUser(name);
+      await repo.logWeight(currentWeight);
+      await get().fetchProfile();
     } finally {
       set({ isLoading: false });
     }

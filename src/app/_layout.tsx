@@ -1,5 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider, Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, useColorScheme, View, Text } from 'react-native';
@@ -12,6 +11,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { DatabaseProvider, useDatabase } from '@/context/DatabaseContext';
 import { Colors } from '@/constants/theme';
 import { setupNotifications } from '@/services/notificationService';
+import { useUserStore } from '@/stores/useUserStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,9 +28,31 @@ function RootApp() {
     Aldrich_400Regular,
   });
 
+  const { user, isLoaded, fetchProfile } = useUserStore();
+  const segments = useSegments();
+  const router = useRouter();
+
   useEffect(() => {
     setupNotifications().catch(console.warn);
   }, []);
+
+  useEffect(() => {
+    if (isReady) {
+      fetchProfile();
+    }
+  }, [isReady, fetchProfile]);
+
+  useEffect(() => {
+    if (!fontsLoaded || !isReady || !isLoaded) return;
+
+    const inOnboarding = segments[0] === 'onboarding';
+
+    if (!user && !inOnboarding) {
+      router.replace('/onboarding');
+    } else if (user && inOnboarding) {
+      router.replace('/(tabs)');
+    }
+  }, [fontsLoaded, isReady, isLoaded, user, segments, router]);
 
   if (error) {
     return (
@@ -41,7 +63,7 @@ function RootApp() {
     );
   }
 
-  if (!fontsLoaded || !isReady) {
+  if (!fontsLoaded || !isReady || !isLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -55,6 +77,14 @@ function RootApp() {
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: customTopPadding }}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="onboarding"
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
+              animation: 'fade',
+            }}
+          />
           <Stack.Screen
             name="workout/active"
             options={{
