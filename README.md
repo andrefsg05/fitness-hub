@@ -6,6 +6,16 @@ Built with an **offline-first** approach, it serves as a straightforward and rel
 
 ---
 
+## Showcase - MVP
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/andrefsg05/showcasing-assets/main/onboarding-fhub.gif" width="30%" />
+  <img src="https://raw.githubusercontent.com/andrefsg05/showcasing-assets/main/workout-fhub.gif" width="30%" />
+  <img src="https://raw.githubusercontent.com/andrefsg05/showcasing-assets/main/reminder-fhub.gif" width="30%" />
+</div>
+
+---
+
 ## Features (Core MVP)
 
 - **Workout Logging:** Easily record workouts, exercises, sets, reps, and weights used with custom notes.
