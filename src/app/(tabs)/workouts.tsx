@@ -11,6 +11,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/AppHeader';
 import { WorkoutActionBanner } from '@/components/WorkoutActionBanner';
 import { WorkoutCard } from '@/components/WorkoutCard';
@@ -54,8 +55,9 @@ export default function WorkoutsScreen() {
           <Text style={[styles.pretitle, { color: colors.textSecondary }]}>My</Text>
           <Text style={[styles.title, { color: colors.text }]}>Workouts</Text>
         </View>
-        <View style={[styles.statBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.statContainer}>
           <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Workouts</Text>
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <Text style={[styles.statValue, { color: colors.text }]}>
             {history.length}
           </Text>
@@ -86,8 +88,12 @@ export default function WorkoutsScreen() {
       )}
 
       {/* Modal: Full Workout History */}
-      <Modal visible={showHistoryModal} animationType="slide" presentationStyle="pageSheet">
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+      <Modal
+        visible={showHistoryModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowHistoryModal(false)}>
+        <SafeAreaView edges={['top', 'bottom']} style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Workout History</Text>
             <Pressable onPress={() => setShowHistoryModal(false)}>
@@ -99,7 +105,7 @@ export default function WorkoutsScreen() {
               <WorkoutCard key={workout.id} workout={workout} />
             ))}
           </ScrollView>
-        </View>
+        </SafeAreaView>
       </Modal>
 
       <View style={{ height: Spacing.six }} />
@@ -121,22 +127,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.three,
   },
-  statBadge: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: 1,
+  statContainer: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
+  },
+  statDivider: {
+    height: 1,
+    width: '100%',
+    minWidth: 64,
+    marginVertical: 4,
+    opacity: 0.7,
   },
   statValue: {
     fontSize: 16,
     fontWeight: '700',
-    marginTop: 2,
   },
   pretitle: {
     fontSize: 14,

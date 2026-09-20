@@ -1,4 +1,4 @@
-# FitnessHub 🏋️‍♂️
+# FitnessHub
 
 **FitnessHub** is a personal mobile fitness tracking application designed to help users log workouts, body metrics, nutrition, and daily habits seamlessly. 
 
@@ -6,16 +6,16 @@ Built with an **offline-first** approach, it serves as a straightforward and rel
 
 ---
 
-## 🎯 Features (Core MVP)
+## Features (Core MVP)
 
-- 📝 **Workout Logging:** Easily record workouts, exercises, sets, reps, and weights used with custom notes.
-- 📊 **Progress & Evolution:** Track personal records (PRs), exercise history, and training frequency over time.
-- ⚖️ **Body Weight & Metrics:** Log body weight updates and track physical changes.
-- 🔔 **Habits & Reminders:** Set up local notifications and reminders for daily fitness habits (drinking water, taking creatine, weighing in, workout sessions).
+- **Workout Logging:** Easily record workouts, exercises, sets, reps, and weights used with custom notes.
+- **Progress & Evolution:** Track personal records (PRs), exercise history, and training frequency over time.
+- **Body Weight & Metrics:** Log body weight updates and track physical changes.
+- **Habits & Reminders:** Set up local notifications and reminders for daily fitness habits (drinking water, taking creatine, weighing in, workout sessions).
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework:** React Native with [Expo](https://expo.dev)
 - **Language:** TypeScript
@@ -23,7 +23,7 @@ Built with an **offline-first** approach, it serves as a straightforward and rel
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -53,7 +53,7 @@ Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
 
 ---
 
-## 💡 Project Vision
+## Project Vision
 
 FitnessHub aims to start simple as a clean, reliable offline workout logger, incrementally evolving into a comprehensive platform combining analytics, nutrition tracking, and structured personal health data.
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -18,6 +19,7 @@ import { useHabitsStore } from '@/stores/useHabitsStore';
 import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { Colors, Spacing } from '@/constants/theme';
+import { getTodayDateString } from '@/services/notificationService';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -25,31 +27,43 @@ export default function HomeScreen() {
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
   const { lastWorkout, isLoading: workoutsLoading, fetchWorkouts } = useWorkoutsStore();
-  const { activeHabits, isLoading: habitsLoading, fetchHabits } = useHabitsStore();
+  const {
+    activeHabits,
+    isLoading: habitsLoading,
+    fetchHabits,
+    toggleCheckHabit,
+  } = useHabitsStore();
   const fetchActiveWorkout = useActiveWorkoutStore((state) => state.fetchActiveWorkout);
   const { user, latestWeight, isLoading: profileLoading, fetchProfile } = useUserStore();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [completedHabitIds, setCompletedHabitIds] = useState<Record<string, boolean>>({});
+  const [currentDate, setCurrentDate] = useState(getTodayDateString());
 
   useEffect(() => {
     fetchWorkouts();
     fetchHabits();
     fetchActiveWorkout();
     fetchProfile();
+
+    // Listen to AppState changes to refresh habits if resuming on a new day
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        const today = getTodayDateString();
+        setCurrentDate(today);
+        fetchHabits();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, [fetchWorkouts, fetchHabits, fetchActiveWorkout, fetchProfile]);
 
   const onRefresh = async () => {
     setRefreshing(true);
+    setCurrentDate(getTodayDateString());
     await Promise.all([fetchWorkouts(), fetchHabits(), fetchActiveWorkout(), fetchProfile()]);
     setRefreshing(false);
-  };
-
-  const toggleHabitCheck = (habitId: string) => {
-    setCompletedHabitIds((prev) => ({
-      ...prev,
-      [habitId]: !prev[habitId],
-    }));
   };
 
   const isLoading = workoutsLoading || habitsLoading || profileLoading;
@@ -70,10 +84,11 @@ export default function HomeScreen() {
         </View>
 
         {latestWeight && (
-          <View style={[styles.weightBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.weightContainer}>
             <Text style={[styles.weightLabel, { color: colors.textSecondary }]}>Bodyweight</Text>
+            <View style={[styles.weightDivider, { backgroundColor: colors.border }]} />
             <Text style={[styles.weightValue, { color: colors.text }]}>
-              {latestWeight.weight} <Text style={{ fontSize: 11 }}>kg</Text>
+              {latestWeight.weight} <Text style={[styles.weightUnit, { color: colors.textSecondary }]}>kg</Text>
             </Text>
           </View>
         )}
@@ -99,7 +114,7 @@ export default function HomeScreen() {
       ) : (
         <View style={[styles.habitsContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {activeHabits.map((habit, index) => {
-            const isChecked = !!completedHabitIds[habit.id];
+            const isChecked = habit.last_checked === currentDate;
             return (
               <Pressable
                 key={habit.id}
@@ -107,7 +122,7 @@ export default function HomeScreen() {
                   styles.habitRow,
                   index < activeHabits.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: 1 },
                 ]}
-                onPress={() => toggleHabitCheck(habit.id)}>
+                onPress={() => toggleCheckHabit(habit.id)}>
                 <View style={[styles.checkbox, isChecked && { backgroundColor: colors.accent, borderColor: colors.accent }]}>
                   {isChecked && <Text style={styles.checkmark}>✓</Text>}
                 </View>
@@ -172,22 +187,30 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: 2,
   },
-  weightBadge: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: 1,
+  weightContainer: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   weightLabel: {
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
+  },
+  weightDivider: {
+    height: 1,
+    width: '100%',
+    minWidth: 64,
+    marginVertical: 4,
+    opacity: 0.7,
   },
   weightValue: {
     fontSize: 16,
     fontWeight: '700',
-    marginTop: 2,
+  },
+  weightUnit: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   sectionHeader: {
     flexDirection: 'row',

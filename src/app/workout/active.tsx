@@ -1,8 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import { LastWorkoutDrawer } from '@/components/LastWorkoutDrawer';
+import { Colors, Spacing } from '@/constants/theme';
+import { useDatabase } from '@/context/DatabaseContext';
+import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
+import { Exercise, WorkoutType, WorkoutWithDetails } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,12 +19,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
-import { useDatabase } from '@/context/DatabaseContext';
-import { Exercise, WorkoutType, WorkoutWithDetails } from '@/types';
-import { Colors, Spacing } from '@/constants/theme';
-import { LastWorkoutDrawer } from '@/components/LastWorkoutDrawer';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
@@ -43,6 +46,7 @@ export default function ActiveWorkoutScreen() {
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [lastWorkout, setLastWorkout] = useState<WorkoutWithDetails | null>(null);
   const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+  const [exerciseSearchQuery, setExerciseSearchQuery] = useState('');
   const [showNewTypeModal, setShowNewTypeModal] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
   const [selectedWorkoutTypeId, setSelectedWorkoutTypeId] = useState<string>('');
@@ -115,6 +119,12 @@ export default function ActiveWorkoutScreen() {
   const handleAddExerciseToWorkout = async (exerciseId: string) => {
     await addExercise(exerciseId);
     setShowAddExerciseModal(false);
+    setExerciseSearchQuery('');
+  };
+
+  const handleCloseAddExerciseModal = () => {
+    setShowAddExerciseModal(false);
+    setExerciseSearchQuery('');
   };
 
   const handleCreateExercise = async () => {
@@ -229,7 +239,11 @@ export default function ActiveWorkoutScreen() {
         </View>
 
         {/* Modal: Create Custom Workout Type */}
-        <Modal visible={showNewTypeModal} transparent animationType="fade">
+        <Modal
+          visible={showNewTypeModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowNewTypeModal(false)}>
           <View style={styles.modalOverlay}>
             <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.dialogTitle, { color: colors.text }]}>Create Custom Workout Routine</Text>
@@ -269,9 +283,15 @@ export default function ActiveWorkoutScreen() {
   }
 
   // State 2: Active workout in progress
-  const filteredExercises = availableExercises.filter(
-    (ex) => !activeWorkout.exercises.some((we) => we.exercise_id === ex.id)
-  );
+  const searchLower = exerciseSearchQuery.trim().toLowerCase();
+  const filteredExercises = availableExercises
+    .filter((ex) => !activeWorkout.exercises.some((we) => we.exercise_id === ex.id))
+    .filter((ex) => {
+      if (!searchLower) return true;
+      const matchName = ex.name.toLowerCase().includes(searchLower);
+      const matchCategory = ex.category ? ex.category.toLowerCase().includes(searchLower) : false;
+      return matchName || matchCategory;
+    });
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
@@ -391,43 +411,84 @@ export default function ActiveWorkoutScreen() {
       </Pressable>
 
       {/* Modal: Select Exercise */}
-      <Modal visible={showAddExerciseModal} animationType="slide" presentationStyle="pageSheet">
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+      <Modal
+        visible={showAddExerciseModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleCloseAddExerciseModal}>
+        <SafeAreaView edges={['top', 'bottom']} style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Select Exercise</Text>
-            <Pressable onPress={() => setShowAddExerciseModal(false)}>
+            <Pressable onPress={handleCloseAddExerciseModal}>
               <Text style={[styles.closeButtonText, { color: colors.primary }]}>Done</Text>
             </Pressable>
           </View>
-          <ScrollView contentContainerStyle={styles.exerciseSelectionList}>
-            {/* Create New Exercise Button */}
+
+          {/* Search Bar */}
+          <View style={styles.searchBarWrapper}>
+            <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Ionicons name="search" size={18} color={colors.textSecondary} style={styles.searchIcon} />
+              <TextInput
+                style={[styles.searchInput, { color: colors.text }]}
+                placeholder="Search exercise or category..."
+                placeholderTextColor={colors.textSecondary}
+                value={exerciseSearchQuery}
+                onChangeText={setExerciseSearchQuery}
+                autoCorrect={false}
+                autoCapitalize="none"
+                clearButtonMode="never"
+              />
+              {exerciseSearchQuery.length > 0 && (
+                <Pressable onPress={() => setExerciseSearchQuery('')} hitSlop={8}>
+                  <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+                </Pressable>
+              )}
+            </View>
+          </View>
+
+          {/* Fixed Create New Exercise Button & Separator */}
+          <View style={styles.modalActionWrapper}>
             <Pressable
               style={[styles.createExerciseBtn, { borderColor: colors.primary }]}
               onPress={() => setShowCreateExerciseModal(true)}>
               <Text style={[styles.createExerciseBtnText, { color: colors.primary }]}>＋ Create New Exercise</Text>
             </Pressable>
-
-            {/* Separator */}
             <View style={[styles.exerciseDivider, { backgroundColor: colors.border }]} />
+          </View>
 
-            {filteredExercises.map((ex) => (
-              <Pressable
-                key={ex.id}
-                style={[styles.exerciseSelectItem, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => handleAddExerciseToWorkout(ex.id)}>
-                <View>
-                  <Text style={[styles.exerciseSelectName, { color: colors.text }]}>{ex.name}</Text>
-                  <Text style={[styles.exerciseSelectCategory, { color: colors.textSecondary }]}>{ex.category}</Text>
-                </View>
-                <Text style={{ color: colors.primary, fontWeight: '700' }}>+ Add</Text>
-              </Pressable>
-            ))}
+          <ScrollView contentContainerStyle={styles.exerciseSelectionList} keyboardShouldPersistTaps="handled">
+            {filteredExercises.length === 0 ? (
+              <View style={styles.emptySearchContainer}>
+                <Text style={[styles.emptySearchText, { color: colors.textSecondary }]}>
+                  {exerciseSearchQuery.trim()
+                    ? `No exercises found matching "${exerciseSearchQuery}"`
+                    : 'No exercises available'}
+                </Text>
+              </View>
+            ) : (
+              filteredExercises.map((ex) => (
+                <Pressable
+                  key={ex.id}
+                  style={[styles.exerciseSelectItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => handleAddExerciseToWorkout(ex.id)}>
+                  <View>
+                    <Text style={[styles.exerciseSelectName, { color: colors.text }]}>{ex.name}</Text>
+                    <Text style={[styles.exerciseSelectCategory, { color: colors.textSecondary }]}>{ex.category}</Text>
+                  </View>
+                  <Text style={{ color: colors.primary, fontWeight: '700' }}>+ Add</Text>
+                </Pressable>
+              ))
+            )}
           </ScrollView>
-        </View>
+        </SafeAreaView>
       </Modal>
 
       {/* Modal: Create Custom Exercise */}
-      <Modal visible={showCreateExerciseModal} transparent animationType="fade">
+      <Modal
+        visible={showCreateExerciseModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCreateExerciseModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.dialogTitle, { color: colors.text }]}>Create Custom Exercise</Text>
@@ -721,12 +782,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  searchBarWrapper: {
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.one,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  searchIcon: {
+    marginRight: Spacing.two,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    padding: 0,
+  },
+  emptySearchContainer: {
+    paddingVertical: Spacing.five,
+    alignItems: 'center',
+  },
+  emptySearchText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  modalActionWrapper: {
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+  },
   exerciseSelectionList: {
-    padding: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.one,
+    paddingBottom: Spacing.four,
     gap: Spacing.two,
   },
   createExerciseBtn: {
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderRadius: 14,
     borderWidth: 1.5,
     borderStyle: 'dashed',
@@ -738,7 +834,8 @@ const styles = StyleSheet.create({
   },
   exerciseDivider: {
     height: 1,
-    marginVertical: Spacing.two,
+    marginTop: Spacing.three,
+    marginBottom: Spacing.two,
   },
   exerciseSelectItem: {
     flexDirection: 'row',

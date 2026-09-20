@@ -24,6 +24,13 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase): Promise<voi
   // Run schema creation
   await db.execAsync(SCHEMA_SQL);
 
+  // Migrate existing tables if needed
+  try {
+    await db.execAsync('ALTER TABLE habits ADD COLUMN last_checked TEXT;');
+  } catch {
+    // Column already exists
+  }
+
   // Run seed data
   await seedDatabase(db);
 }

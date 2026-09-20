@@ -1,16 +1,17 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, useColorScheme, View, Text } from 'react-native';
 
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useFonts, Aldrich_400Regular } from '@expo-google-fonts/aldrich';
 
-
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { DatabaseProvider, useDatabase } from '@/context/DatabaseContext';
 import { Colors } from '@/constants/theme';
+import { setupNotifications } from '@/services/notificationService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,6 +27,10 @@ function RootApp() {
   const [fontsLoaded] = useFonts({
     Aldrich_400Regular,
   });
+
+  useEffect(() => {
+    setupNotifications().catch(console.warn);
+  }, []);
 
   if (error) {
     return (

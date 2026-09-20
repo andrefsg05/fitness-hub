@@ -231,7 +231,11 @@ export default function ProfileScreen() {
 
 
       {/* Modal: Log Weight */}
-      <Modal visible={showWeightModal} transparent animationType="fade">
+      <Modal
+        visible={showWeightModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowWeightModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.dialogTitle, { color: colors.text }]}>Log Today's Bodyweight</Text>
@@ -257,7 +261,11 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* Modal: New Goal */}
-      <Modal visible={showGoalModal} transparent animationType="fade">
+      <Modal
+        visible={showGoalModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGoalModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.dialogTitle, { color: colors.text }]}>Add New Goal</Text>
@@ -288,7 +296,11 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* Modal: New Habit */}
-      <Modal visible={showHabitModal} transparent animationType="fade">
+      <Modal
+        visible={showHabitModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowHabitModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.dialogTitle, { color: colors.text }]}>New Habit / Reminder</Text>

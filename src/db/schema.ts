@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS habits (
   frequency TEXT NOT NULL,
   reminder_time TEXT,
   is_active INTEGER NOT NULL DEFAULT 1,
+  last_checked TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

@@ -29,6 +29,7 @@ export interface Habit {
   frequency: 'daily' | 'weekdays' | 'weekly';
   reminder_time: string | null; // HH:MM
   is_active: number; // 0 or 1
+  last_checked?: string | null; // YYYY-MM-DD
   created_at: string;
 }
 
