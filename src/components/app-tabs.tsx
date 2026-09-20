@@ -1,72 +1,57 @@
-import { Tabs } from 'expo-router';
-import { Pressable, useColorScheme } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-import { Colors } from '@/constants/theme';
+import React, { useRef, useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import PagerView from 'react-native-pager-view';
+import HomeScreen from '@/app/(tabs)/index';
+import WorkoutsScreen from '@/app/(tabs)/workouts';
+import ProfileScreen from '@/app/(tabs)/profile';
+import { CustomBottomTabBar } from './CustomBottomTabBar';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const pagerRef = useRef<PagerView>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const handlePageSelected = (e: { nativeEvent: { position: number } }) => {
+    setActiveIndex(e.nativeEvent.position);
+  };
+
+  const handleTabPress = (index: number) => {
+    setActiveIndex(index);
+    pagerRef.current?.setPage(index);
+  };
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
-        },
-        tabBarButton: ({ ref: _ref, ...props }) => (
-          <Pressable
-            {...props}
-            android_ripple={null}
-          />
-        ),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'home' : 'home-outline'}
-              size={24}
-              color={color}
-            />
-          ),
-        }}
+    <View style={styles.container}>
+      <PagerView
+        ref={pagerRef}
+        style={styles.pagerView}
+        initialPage={0}
+        onPageSelected={handlePageSelected}>
+        <View key="home" style={styles.page}>
+          <HomeScreen />
+        </View>
+        <View key="workouts" style={styles.page}>
+          <WorkoutsScreen />
+        </View>
+        <View key="profile" style={styles.page}>
+          <ProfileScreen />
+        </View>
+      </PagerView>
+      <CustomBottomTabBar
+        activeIndex={activeIndex}
+        onTabPress={handleTabPress}
       />
-
-      <Tabs.Screen
-        name="workouts"
-        options={{
-          title: 'Workouts',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'barbell' : 'barbell-outline'}
-              size={24}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'person' : 'person-outline'}
-              size={24}
-              color={color}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+    </View>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  pagerView: {
+    flex: 1,
+  },
+  page: {
+    flex: 1,
+  },
+});
