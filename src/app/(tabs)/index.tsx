@@ -10,7 +10,6 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { AppHeader } from '@/components/AppHeader';
 import { WorkoutActionBanner } from '@/components/WorkoutActionBanner';
 import { WorkoutCard } from '@/components/WorkoutCard';
@@ -18,11 +17,12 @@ import { useWorkoutsStore } from '@/stores/useWorkoutsStore';
 import { useHabitsStore } from '@/stores/useHabitsStore';
 import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
 import { useUserStore } from '@/stores/useUserStore';
+import { useTabNavigationStore } from '@/stores/useTabNavigationStore';
 import { Colors, Spacing } from '@/constants/theme';
 import { getTodayDateString } from '@/services/notificationService';
 
 export default function HomeScreen() {
-  const router = useRouter();
+  const { setActiveTab } = useTabNavigationStore();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
@@ -100,7 +100,7 @@ export default function HomeScreen() {
       {/* Today's Habits & Reminders */}
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Reminders</Text>
-        <Pressable onPress={() => router.push('/profile')}>
+        <Pressable onPress={() => setActiveTab('profile')}>
           <Text style={[styles.sectionLink, { color: colors.primary }]}>Manage</Text>
         </Pressable>
       </View>
@@ -145,7 +145,7 @@ export default function HomeScreen() {
       {/* Last Workout Summary */}
       <View style={[styles.sectionHeader, { marginTop: Spacing.four }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Last Workout</Text>
-        <Pressable onPress={() => router.push('/workouts')}>
+        <Pressable onPress={() => setActiveTab('workouts')}>
           <Text style={[styles.sectionLink, { color: colors.primary }]}>All Workouts</Text>
         </Pressable>
       </View>

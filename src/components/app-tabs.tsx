@@ -1,22 +1,32 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import HomeScreen from '@/app/(tabs)/index';
 import WorkoutsScreen from '@/app/(tabs)/workouts';
 import ProfileScreen from '@/app/(tabs)/profile';
 import { CustomBottomTabBar } from './CustomBottomTabBar';
+import { useTabNavigationStore, TabIndex } from '@/stores/useTabNavigationStore';
 
 export default function AppTabs() {
   const pagerRef = useRef<PagerView>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const currentPosition = useRef(0);
+  const { activeTab, setActiveTab } = useTabNavigationStore();
+
+  useEffect(() => {
+    if (currentPosition.current !== activeTab) {
+      currentPosition.current = activeTab;
+      pagerRef.current?.setPage(activeTab);
+    }
+  }, [activeTab]);
 
   const handlePageSelected = (e: { nativeEvent: { position: number } }) => {
-    setActiveIndex(e.nativeEvent.position);
+    const newPos = e.nativeEvent.position as TabIndex;
+    currentPosition.current = newPos;
+    setActiveTab(newPos);
   };
 
   const handleTabPress = (index: number) => {
-    setActiveIndex(index);
-    pagerRef.current?.setPage(index);
+    setActiveTab(index as TabIndex);
   };
 
   return (
@@ -37,7 +47,7 @@ export default function AppTabs() {
         </View>
       </PagerView>
       <CustomBottomTabBar
-        activeIndex={activeIndex}
+        activeIndex={activeTab}
         onTabPress={handleTabPress}
       />
     </View>
