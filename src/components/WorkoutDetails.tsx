@@ -1,5 +1,10 @@
-import React from 'react';
+import { Colors, Spacing } from '@/constants/theme';
+import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
+import { WorkoutExerciseWithDetails, WorkoutWithDetails } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import {
+  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -7,13 +12,13 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { WorkoutWithDetails, WorkoutExerciseWithDetails } from '@/types';
-import { Colors, Spacing } from '@/constants/theme';
 
 interface WorkoutDetailsProps {
   workout: WorkoutWithDetails;
   onClose?: () => void;
   showCloseButton?: boolean;
+  showCopyButton?: boolean;
+  onCopy?: () => void;
 }
 
 function ExerciseCard({
@@ -65,7 +70,14 @@ function ExerciseCard({
   );
 }
 
-export function WorkoutDetails({ workout, onClose, showCloseButton = true }: WorkoutDetailsProps) {
+export function WorkoutDetails({
+  workout,
+  onClose,
+  showCloseButton = true,
+  showCopyButton = true,
+  onCopy,
+}: WorkoutDetailsProps) {
+  const router = useRouter();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
@@ -75,6 +87,72 @@ export function WorkoutDetails({ workout, onClose, showCloseButton = true }: Wor
     month: 'long',
     day: 'numeric',
   });
+
+  const handleDefaultCopy = () => {
+    if (workout.exercises.length === 0) {
+      Alert.alert('Notice', 'This workout has no exercises to copy.');
+      return;
+    }
+
+    const activeWorkout = useActiveWorkoutStore.getState().activeWorkout;
+    const copyWorkout = useActiveWorkoutStore.getState().copyWorkout;
+
+    if (activeWorkout) {
+      Alert.alert(
+        'Copy to Active Workout',
+        `You already have a workout in progress (${activeWorkout.workout_type_name}). Do you want to import the missing exercises from this workout?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Copy',
+            style: 'default',
+            onPress: async () => {
+              try {
+                const result = await copyWorkout(workout);
+                if (result.count === 0) {
+                  Alert.alert(
+                    'Exercises Already Present',
+                    'All exercises from this workout are already in your active workout.',
+                    [
+                      { text: 'Stay Here', style: 'cancel' },
+                      {
+                        text: 'Go to Workout',
+                        onPress: () => router.push('/workout/active'),
+                      },
+                    ]
+                  );
+                } else {
+                  router.push('/workout/active');
+                }
+              } catch (error) {
+                Alert.alert('Error', 'Failed to copy exercises.');
+              }
+            },
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Start New Workout',
+        `Do you want to start a new ${workout.workout_type_name} workout with the exercises and sets from this workout?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Start',
+            style: 'default',
+            onPress: async () => {
+              try {
+                await copyWorkout(workout);
+                router.push('/workout/active');
+              } catch (error) {
+                Alert.alert('Error', 'Failed to create new workout.');
+              }
+            },
+          },
+        ]
+      );
+    }
+  };
 
   const renderExercise = ({ item }: { item: WorkoutExerciseWithDetails }) => (
     <ExerciseCard exercise={item} colors={colors} />
@@ -91,6 +169,24 @@ export function WorkoutDetails({ workout, onClose, showCloseButton = true }: Wor
             hitSlop={12}
           >
             <Text style={[styles.closeButtonText, { color: colors.text }]}>✕</Text>
+          </Pressable>
+        )}
+
+        {showCopyButton && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.copyButton,
+              {
+                backgroundColor: colors.backgroundElement,
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+            onPress={onCopy ?? handleDefaultCopy}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Copy workout"
+          >
+            <Ionicons name="copy-outline" size={17} color={colors.primary} />
           </Pressable>
         )}
 
@@ -183,6 +279,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 10,
   },
+  copyButton: {
+    position: 'absolute',
+    top: Spacing.two,
+    right: Spacing.three,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
   closeButtonText: {
     fontSize: 14,
     fontWeight: '600',
@@ -191,6 +298,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
+    paddingHorizontal: Spacing.five,
   },
   dateText: {
     fontSize: 14,

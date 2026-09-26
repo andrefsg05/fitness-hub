@@ -1,14 +1,17 @@
-import { create } from 'zustand';
-import { WorkoutWithDetails } from '@/types';
 import { getDatabase } from '@/db/database';
 import { WorkoutRepository } from '@/db/repositories/workoutRepository';
 import { useWorkoutsStore } from '@/stores/useWorkoutsStore';
+import { WorkoutWithDetails } from '@/types';
+import { create } from 'zustand';
 
 interface ActiveWorkoutState {
   activeWorkout: WorkoutWithDetails | null;
   isLoading: boolean;
   fetchActiveWorkout: () => Promise<void>;
   startWorkout: (workoutTypeId: string) => Promise<WorkoutWithDetails | null>;
+  copyWorkout: (
+    sourceWorkout: WorkoutWithDetails
+  ) => Promise<{ isNew: boolean; count: number }>;
   addExercise: (exerciseId: string) => Promise<void>;
   removeExercise: (workoutExerciseId: string) => Promise<void>;
   addSet: (
@@ -55,6 +58,30 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     } catch (err) {
       console.error('Error starting workout in store:', err);
       return null;
+    }
+  },
+
+  copyWorkout: async (sourceWorkout: WorkoutWithDetails) => {
+    try {
+      const repo = await getRepo();
+      const currentActive = get().activeWorkout ?? (await repo.getActiveWorkout());
+
+      if (!currentActive) {
+        const newWorkout = await repo.createWorkoutFromTemplate(sourceWorkout);
+        set({ activeWorkout: newWorkout });
+        return { isNew: true, count: newWorkout.exercises.length };
+      } else {
+        const count = await repo.copyMissingExercisesToWorkout(
+          currentActive.id,
+          sourceWorkout.exercises
+        );
+        const updated = await repo.getActiveWorkout();
+        set({ activeWorkout: updated });
+        return { isNew: false, count };
+      }
+    } catch (err) {
+      console.error('Error copying workout in store:', err);
+      throw err;
     }
   },
 

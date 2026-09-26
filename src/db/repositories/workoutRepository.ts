@@ -1,4 +1,3 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
 import {
   Workout,
   WorkoutExercise,
@@ -7,6 +6,7 @@ import {
   WorkoutSummary,
   WorkoutWithDetails,
 } from '@/types';
+import type { SQLiteDatabase } from 'expo-sqlite';
 
 export class WorkoutRepository {
   constructor(private db: SQLiteDatabase) { }
@@ -59,6 +59,136 @@ export class WorkoutRepository {
 
   async discardWorkout(workoutId: string): Promise<void> {
     await this.db.runAsync('DELETE FROM workouts WHERE id = ?', workoutId);
+  }
+
+  async createWorkoutFromTemplate(sourceWorkout: WorkoutWithDetails): Promise<WorkoutWithDetails> {
+    const existing = await this.getActiveWorkout();
+    if (existing) {
+      throw new Error('An active workout is already in progress');
+    }
+
+    const workoutId = `workout-${Date.now()}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    await this.db.runAsync(
+      "INSERT INTO workouts (id, workout_type_id, date, status, notes) VALUES (?, ?, ?, 'in_progress', NULL)",
+      workoutId,
+      sourceWorkout.workout_type_id,
+      today
+    );
+
+    let orderIndex = 0;
+    for (const ex of sourceWorkout.exercises) {
+      const weId = `we-${Date.now()}-${orderIndex}-${Math.random().toString(36).substring(2, 7)}`;
+      await this.db.runAsync(
+        'INSERT INTO workout_exercises (id, workout_id, exercise_id, order_index, notes) VALUES (?, ?, ?, ?, ?)',
+        weId,
+        workoutId,
+        ex.exercise_id,
+        orderIndex,
+        ex.notes ?? null
+      );
+
+      let setNum = 1;
+      for (const set of ex.sets) {
+        const setId = `ws-${Date.now()}-${orderIndex}-${setNum}-${Math.random().toString(36).substring(2, 7)}`;
+        await this.db.runAsync(
+          'INSERT INTO workout_sets (id, workout_exercise_id, set_number, weight, reps) VALUES (?, ?, ?, ?, ?)',
+          setId,
+          weId,
+          set.set_number ?? setNum,
+          set.weight,
+          set.reps
+        );
+        setNum++;
+      }
+
+      if (ex.sets.length === 0) {
+        const setId = `ws-${Date.now()}-${orderIndex}-1-${Math.random().toString(36).substring(2, 7)}`;
+        await this.db.runAsync(
+          'INSERT INTO workout_sets (id, workout_exercise_id, set_number, weight, reps) VALUES (?, ?, ?, ?, ?)',
+          setId,
+          weId,
+          1,
+          0,
+          0
+        );
+      }
+
+      orderIndex++;
+    }
+
+    const created = await this.getWorkoutDetails(workoutId);
+    if (!created) {
+      throw new Error('Failed to retrieve copied workout');
+    }
+    return created;
+  }
+
+  async copyMissingExercisesToWorkout(
+    targetWorkoutId: string,
+    sourceExercises: WorkoutExerciseWithDetails[]
+  ): Promise<number> {
+    const existing = await this.db.getAllAsync<{ exercise_id: string }>(
+      'SELECT exercise_id FROM workout_exercises WHERE workout_id = ?',
+      targetWorkoutId
+    );
+    const existingExerciseIds = new Set(existing.map((e) => e.exercise_id));
+
+    const maxOrderRow = await this.db.getFirstAsync<{ max_order: number | null }>(
+      'SELECT MAX(order_index) as max_order FROM workout_exercises WHERE workout_id = ?',
+      targetWorkoutId
+    );
+    let nextOrder = (maxOrderRow?.max_order ?? -1) + 1;
+
+    let addedCount = 0;
+    for (const ex of sourceExercises) {
+      if (existingExerciseIds.has(ex.exercise_id)) {
+        continue;
+      }
+      existingExerciseIds.add(ex.exercise_id);
+
+      const weId = `we-${Date.now()}-${nextOrder}-${Math.random().toString(36).substring(2, 7)}`;
+      await this.db.runAsync(
+        'INSERT INTO workout_exercises (id, workout_id, exercise_id, order_index, notes) VALUES (?, ?, ?, ?, ?)',
+        weId,
+        targetWorkoutId,
+        ex.exercise_id,
+        nextOrder,
+        ex.notes ?? null
+      );
+
+      let setNum = 1;
+      for (const set of ex.sets) {
+        const setId = `ws-${Date.now()}-${nextOrder}-${setNum}-${Math.random().toString(36).substring(2, 7)}`;
+        await this.db.runAsync(
+          'INSERT INTO workout_sets (id, workout_exercise_id, set_number, weight, reps) VALUES (?, ?, ?, ?, ?)',
+          setId,
+          weId,
+          set.set_number ?? setNum,
+          set.weight,
+          set.reps
+        );
+        setNum++;
+      }
+
+      if (ex.sets.length === 0) {
+        const setId = `ws-${Date.now()}-${nextOrder}-1-${Math.random().toString(36).substring(2, 7)}`;
+        await this.db.runAsync(
+          'INSERT INTO workout_sets (id, workout_exercise_id, set_number, weight, reps) VALUES (?, ?, ?, ?, ?)',
+          setId,
+          weId,
+          1,
+          0,
+          0
+        );
+      }
+
+      nextOrder++;
+      addedCount++;
+    }
+
+    return addedCount;
   }
 
   // 2. Managing exercises and sets inside a workout

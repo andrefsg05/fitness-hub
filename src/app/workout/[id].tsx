@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, StyleSheet, useColorScheme } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useDatabase } from '@/context/DatabaseContext';
-import { WorkoutWithDetails } from '@/types';
 import { WorkoutDetails } from '@/components/WorkoutDetails';
 import { Colors } from '@/constants/theme';
+import { useDatabase } from '@/context/DatabaseContext';
+import { WorkoutWithDetails } from '@/types';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, useColorScheme, View } from 'react-native';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

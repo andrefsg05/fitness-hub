@@ -1,5 +1,9 @@
-import React, { useRef, useState, useMemo } from 'react';
+import { Colors, Spacing } from '@/constants/theme';
+import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
+import { WorkoutWithDetails } from '@/types';
+import { useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   Modal,
@@ -10,8 +14,6 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WorkoutWithDetails } from '@/types';
-import { Colors, Spacing } from '@/constants/theme';
 import { WorkoutDetails } from './WorkoutDetails';
 
 interface LastWorkoutDrawerProps {
@@ -22,6 +24,8 @@ export function LastWorkoutDrawer({ workout }: LastWorkoutDrawerProps) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const insets = useSafeAreaInsets();
+
+  const copyWorkout = useActiveWorkoutStore((state) => state.copyWorkout);
 
   const [visible, setVisible] = useState(false);
   const { height: screenHeight } = Dimensions.get('window');
@@ -50,7 +54,7 @@ export function LastWorkoutDrawer({ workout }: LastWorkoutDrawerProps) {
   };
 
   // Close drawer animation
-  const closeDrawer = () => {
+  const closeDrawer = (onClosed?: (() => void) | unknown) => {
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: -drawerHeight,
@@ -64,7 +68,44 @@ export function LastWorkoutDrawer({ workout }: LastWorkoutDrawerProps) {
       }),
     ]).start(() => {
       setVisible(false);
+      if (typeof onClosed === 'function') {
+        onClosed();
+      }
     });
+  };
+
+  const handleCopy = () => {
+    if (workout.exercises.length === 0) {
+      Alert.alert('Notice', 'This workout has no exercises to copy.');
+      return;
+    }
+
+    Alert.alert(
+      'Import Exercises',
+      'Do you want to import the missing exercises from this workout into your active workout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Import',
+          style: 'default',
+          onPress: async () => {
+            try {
+              const result = await copyWorkout(workout);
+              closeDrawer(() => {
+                if (result.count === 0) {
+                  Alert.alert(
+                    'Exercises Already Present',
+                    'All exercises from this workout are already in your active workout.'
+                  );
+                }
+              });
+            } catch (error) {
+              Alert.alert('Error', 'Failed to import exercises.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -137,6 +178,8 @@ export function LastWorkoutDrawer({ workout }: LastWorkoutDrawerProps) {
                 workout={workout}
                 onClose={closeDrawer}
                 showCloseButton={true}
+                showCopyButton={true}
+                onCopy={handleCopy}
               />
             </View>
           </Animated.View>
