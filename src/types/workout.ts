@@ -6,6 +6,13 @@ export interface WorkoutSetInput {
   reps: number;
 }
 
+export interface WorkoutDropSetInput {
+  drop_order: number;
+  weight: number;
+  reps: number;
+}
+
+
 export interface WorkoutExerciseWithDetails extends WorkoutExercise {
   exercise_name: string;
   category: string;

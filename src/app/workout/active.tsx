@@ -36,6 +36,9 @@ export default function ActiveWorkoutScreen() {
     addSet,
     updateSet,
     deleteSet,
+    addDropSet,
+    updateDropSet,
+    deleteDropSet,
     finishWorkout,
     discardWorkout,
   } = useActiveWorkoutStore();
@@ -334,40 +337,107 @@ export default function ActiveWorkoutScreen() {
 
             {/* Sets Table */}
             <View style={styles.setTableHeader}>
-              <Text style={[styles.setTh, { width: 40, color: colors.textSecondary }]}>SET</Text>
+              <Text style={[styles.setTh, { width: 52, color: colors.textSecondary }]}>SET</Text>
               <Text style={[styles.setTh, { flex: 1, color: colors.textSecondary }]}>KG</Text>
               <Text style={[styles.setTh, { flex: 1, color: colors.textSecondary }]}>REPS</Text>
-              <Text style={[styles.setTh, { width: 36, color: colors.textSecondary }]}></Text>
+              <Text style={[styles.setTh, { width: 32, color: colors.textSecondary }]}></Text>
             </View>
 
             {we.sets.map((set, sIdx) => (
-              <View key={set.id} style={styles.setRow}>
-                <Text style={[styles.setNumber, { color: colors.textSecondary }]}>{sIdx + 1}</Text>
-                <TextInput
-                  style={[styles.setInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-                  keyboardType="numeric"
-                  defaultValue={set.weight > 0 ? String(set.weight) : ''}
-                  placeholder="0"
-                  placeholderTextColor={colors.textSecondary}
-                  onEndEditing={(e) => {
-                    const w = parseFloat(e.nativeEvent.text) || 0;
-                    updateSet(set.id, w, set.reps);
-                  }}
-                />
-                <TextInput
-                  style={[styles.setInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-                  keyboardType="numeric"
-                  defaultValue={set.reps > 0 ? String(set.reps) : ''}
-                  placeholder="0"
-                  placeholderTextColor={colors.textSecondary}
-                  onEndEditing={(e) => {
-                    const r = parseInt(e.nativeEvent.text, 10) || 0;
-                    updateSet(set.id, set.weight, r);
-                  }}
-                />
-                <Pressable onPress={() => deleteSet(set.id)} style={styles.deleteSetBtn}>
-                  <Text style={{ color: colors.danger, fontSize: 14 }}>✕</Text>
-                </Pressable>
+              <View key={set.id} style={styles.setGroup}>
+                {sIdx > 0 && (
+                  <View style={[styles.setSeparator, { backgroundColor: colors.border }]} />
+                )}
+                <View style={styles.setRow}>
+                  <Text style={[styles.setNumber, { color: colors.textSecondary }]}>{sIdx + 1}</Text>
+                  <TextInput
+                    style={[styles.setInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
+                    keyboardType="numeric"
+                    defaultValue={set.weight > 0 ? String(set.weight) : ''}
+                    placeholder="0"
+                    placeholderTextColor={colors.textSecondary}
+                    onEndEditing={(e) => {
+                      const w = parseFloat(e.nativeEvent.text) || 0;
+                      updateSet(set.id, w, set.reps);
+                    }}
+                  />
+                  <TextInput
+                    style={[styles.setInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
+                    keyboardType="numeric"
+                    defaultValue={set.reps > 0 ? String(set.reps) : ''}
+                    placeholder="0"
+                    placeholderTextColor={colors.textSecondary}
+                    onEndEditing={(e) => {
+                      const r = parseInt(e.nativeEvent.text, 10) || 0;
+                      updateSet(set.id, set.weight, r);
+                    }}
+                  />
+                  <Pressable onPress={() => deleteSet(set.id)} style={styles.deleteSetBtn}>
+                    <Text style={{ color: colors.danger, fontSize: 14 }}>✕</Text>
+                  </Pressable>
+                </View>
+
+                {set.drop_sets && set.drop_sets.map((drop, dIdx) => (
+                  <View key={drop.id} style={styles.dropSetRow}>
+                    <Text style={[styles.dropSetLabel, { color: colors.textSecondary }]}>
+                      {dIdx + 1}º drop
+                    </Text>
+                    <TextInput
+                      style={[
+                        styles.setInput,
+                        styles.dropSetInput,
+                        { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border },
+                      ]}
+                      keyboardType="numeric"
+                      defaultValue={drop.weight > 0 ? String(drop.weight) : ''}
+                      placeholder="0"
+                      placeholderTextColor={colors.textSecondary}
+                      onEndEditing={(e) => {
+                        const w = parseFloat(e.nativeEvent.text) || 0;
+                        updateDropSet(drop.id, w, drop.reps);
+                      }}
+                    />
+                    <TextInput
+                      style={[
+                        styles.setInput,
+                        styles.dropSetInput,
+                        { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border },
+                      ]}
+                      keyboardType="numeric"
+                      defaultValue={drop.reps > 0 ? String(drop.reps) : ''}
+                      placeholder="0"
+                      placeholderTextColor={colors.textSecondary}
+                      onEndEditing={(e) => {
+                        const r = parseInt(e.nativeEvent.text, 10) || 0;
+                        updateDropSet(drop.id, drop.weight, r);
+                      }}
+                    />
+                    <Pressable onPress={() => deleteDropSet(drop.id)} style={styles.deleteSetBtn}>
+                      <Text style={{ color: colors.danger, fontSize: 14 }}>✕</Text>
+                    </Pressable>
+                  </View>
+                ))}
+
+                <View style={styles.addDropSetContainer}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.addDropSetBtn,
+                      { backgroundColor: colors.backgroundElement, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                    onPress={() => {
+                      const lastDrop = set.drop_sets && set.drop_sets.length > 0
+                        ? set.drop_sets[set.drop_sets.length - 1]
+                        : null;
+                      const initialWeight = lastDrop
+                        ? lastDrop.weight
+                        : (set.weight > 0 ? Math.max(0, set.weight - 2.5) : 0);
+                      const initialReps = lastDrop ? lastDrop.reps : set.reps;
+                      addDropSet(set.id, initialWeight, initialReps);
+                    }}
+                  >
+                    <Text style={[styles.addDropSetBtnText, { color: colors.textSecondary }]}>+ Drop set</Text>
+                  </Pressable>
+                </View>
               </View>
             ))}
 
@@ -673,13 +743,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
-    paddingHorizontal: 4,
+    gap: Spacing.two,
   },
   setTh: {
     fontSize: 10,
     fontWeight: '700',
     textAlign: 'center',
     letterSpacing: 0.5,
+  },
+  setGroup: {
+    marginBottom: 4,
+  },
+  setSeparator: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 10,
+    opacity: 0.8,
   },
   setRow: {
     flexDirection: 'row',
@@ -688,10 +766,46 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   setNumber: {
-    width: 36,
+    width: 52,
     textAlign: 'center',
     fontSize: 14,
     fontWeight: '700',
+  },
+  dropSetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginBottom: 6,
+  },
+  dropSetLabel: {
+    width: 52,
+    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '600',
+    fontStyle: 'italic',
+  },
+  dropSetInput: {
+    paddingVertical: 6,
+    fontSize: 14,
+    opacity: 0.9,
+  },
+  addDropSetContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 52 + Spacing.two,
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  addDropSetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  addDropSetBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   setInput: {
     flex: 1,

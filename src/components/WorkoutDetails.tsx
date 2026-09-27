@@ -47,22 +47,44 @@ function ExerciseCard({
         </View>
 
         {exercise.sets.map((set) => (
-          <View
-            key={set.id}
-            style={[
-              styles.setRow,
-              { borderTopWidth: 1, borderTopColor: colors.border },
-            ]}
-          >
-            <Text style={[styles.setNumberText, { color: colors.textSecondary }, styles.setCol]}>
-              {set.set_number}
-            </Text>
-            <Text style={[styles.setValueText, { color: colors.text }, styles.weightCol]}>
-              {set.weight} <Text style={styles.unitText}>kg</Text>
-            </Text>
-            <Text style={[styles.setValueText, { color: colors.text }, styles.repsCol]}>
-              {set.reps}
-            </Text>
+          <View key={set.id}>
+            <View
+              style={[
+                styles.setRow,
+                { borderTopWidth: 1, borderTopColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.setNumberText, { color: colors.textSecondary }, styles.setCol]}>
+                {set.set_number}
+              </Text>
+              <Text style={[styles.setValueText, { color: colors.text }, styles.weightCol]}>
+                {set.weight} <Text style={styles.unitText}>kg</Text>
+              </Text>
+              <Text style={[styles.setValueText, { color: colors.text }, styles.repsCol]}>
+                {set.reps}
+              </Text>
+            </View>
+
+            {set.drop_sets && set.drop_sets.map((drop, dIdx) => (
+              <View
+                key={drop.id}
+                style={[
+                  styles.setRow,
+                  styles.dropSetRow,
+                  { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+                ]}
+              >
+                <Text style={[styles.dropSetLabel, { color: colors.textSecondary }, styles.setCol]}>
+                  {dIdx + 1}º drop
+                </Text>
+                <Text style={[styles.dropSetValueText, { color: colors.textSecondary }, styles.weightCol]}>
+                  {drop.weight} <Text style={styles.unitText}>kg</Text>
+                </Text>
+                <Text style={[styles.dropSetValueText, { color: colors.textSecondary }, styles.repsCol]}>
+                  {drop.reps}
+                </Text>
+              </View>
+            ))}
           </View>
         ))}
       </View>
@@ -400,7 +422,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   setCol: {
-    width: 48,
+    width: 56,
     textAlign: 'center',
   },
   weightCol: {
@@ -423,6 +445,18 @@ const styles = StyleSheet.create({
   setValueText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  dropSetRow: {
+    paddingVertical: 5,
+  },
+  dropSetLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontStyle: 'italic',
+  },
+  dropSetValueText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   emptyCard: {
     borderRadius: 14,

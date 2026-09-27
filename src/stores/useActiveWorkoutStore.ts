@@ -22,6 +22,17 @@ interface ActiveWorkoutState {
   ) => Promise<void>;
   updateSet: (setId: string, weight: number, reps: number) => Promise<void>;
   deleteSet: (setId: string) => Promise<void>;
+  addDropSet: (
+    workoutSetId: string,
+    weight: number,
+    reps: number
+  ) => Promise<void>;
+  updateDropSet: (
+    dropSetId: string,
+    weight: number,
+    reps: number
+  ) => Promise<void>;
+  deleteDropSet: (dropSetId: string) => Promise<void>;
   finishWorkout: (notes?: string | null) => Promise<void>;
   discardWorkout: () => Promise<void>;
 }
@@ -139,6 +150,39 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
       set({ activeWorkout: active });
     } catch (err) {
       console.error('Error deleting set in store:', err);
+    }
+  },
+
+  addDropSet: async (workoutSetId: string, weight: number, reps: number) => {
+    try {
+      const repo = await getRepo();
+      await repo.addDropSet(workoutSetId, weight, reps);
+      const active = await repo.getActiveWorkout();
+      set({ activeWorkout: active });
+    } catch (err) {
+      console.error('Error adding drop set in store:', err);
+    }
+  },
+
+  updateDropSet: async (dropSetId: string, weight: number, reps: number) => {
+    try {
+      const repo = await getRepo();
+      await repo.updateDropSet(dropSetId, weight, reps);
+      const active = await repo.getActiveWorkout();
+      set({ activeWorkout: active });
+    } catch (err) {
+      console.error('Error updating drop set in store:', err);
+    }
+  },
+
+  deleteDropSet: async (dropSetId: string) => {
+    try {
+      const repo = await getRepo();
+      await repo.deleteDropSet(dropSetId);
+      const active = await repo.getActiveWorkout();
+      set({ activeWorkout: active });
+    } catch (err) {
+      console.error('Error deleting drop set in store:', err);
     }
   },
 

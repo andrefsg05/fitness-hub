@@ -1,5 +1,6 @@
 import {
   Workout,
+  WorkoutDropSet,
   WorkoutExercise,
   WorkoutExerciseWithDetails,
   WorkoutSet,
@@ -100,6 +101,23 @@ export class WorkoutRepository {
           set.weight,
           set.reps
         );
+
+        if (set.drop_sets && set.drop_sets.length > 0) {
+          let dropNum = 1;
+          for (const drop of set.drop_sets) {
+            const dropId = `wds-${Date.now()}-${orderIndex}-${setNum}-${dropNum}-${Math.random().toString(36).substring(2, 7)}`;
+            await this.db.runAsync(
+              'INSERT INTO workout_drop_sets (id, workout_set_id, drop_order, weight, reps) VALUES (?, ?, ?, ?, ?)',
+              dropId,
+              setId,
+              drop.drop_order ?? dropNum,
+              drop.weight,
+              drop.reps
+            );
+            dropNum++;
+          }
+        }
+
         setNum++;
       }
 
@@ -169,6 +187,23 @@ export class WorkoutRepository {
           set.weight,
           set.reps
         );
+
+        if (set.drop_sets && set.drop_sets.length > 0) {
+          let dropNum = 1;
+          for (const drop of set.drop_sets) {
+            const dropId = `wds-${Date.now()}-${nextOrder}-${setNum}-${dropNum}-${Math.random().toString(36).substring(2, 7)}`;
+            await this.db.runAsync(
+              'INSERT INTO workout_drop_sets (id, workout_set_id, drop_order, weight, reps) VALUES (?, ?, ?, ?, ?)',
+              dropId,
+              setId,
+              drop.drop_order ?? dropNum,
+              drop.weight,
+              drop.reps
+            );
+            dropNum++;
+          }
+        }
+
         setNum++;
       }
 
@@ -259,6 +294,45 @@ export class WorkoutRepository {
     await this.db.runAsync('DELETE FROM workout_sets WHERE id = ?', setId);
   }
 
+  async addDropSet(workoutSetId: string, weight: number, reps: number): Promise<WorkoutDropSet> {
+    const maxOrder = await this.db.getFirstAsync<{ max_order: number | null }>(
+      'SELECT MAX(drop_order) as max_order FROM workout_drop_sets WHERE workout_set_id = ?',
+      workoutSetId
+    );
+    const nextOrder = (maxOrder?.max_order ?? 0) + 1;
+    const id = `wds-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+
+    await this.db.runAsync(
+      'INSERT INTO workout_drop_sets (id, workout_set_id, drop_order, weight, reps) VALUES (?, ?, ?, ?, ?)',
+      id,
+      workoutSetId,
+      nextOrder,
+      weight,
+      reps
+    );
+
+    return {
+      id,
+      workout_set_id: workoutSetId,
+      drop_order: nextOrder,
+      weight,
+      reps,
+    };
+  }
+
+  async updateDropSet(dropSetId: string, weight: number, reps: number): Promise<void> {
+    await this.db.runAsync(
+      'UPDATE workout_drop_sets SET weight = ?, reps = ? WHERE id = ?',
+      weight,
+      reps,
+      dropSetId
+    );
+  }
+
+  async deleteDropSet(dropSetId: string): Promise<void> {
+    await this.db.runAsync('DELETE FROM workout_drop_sets WHERE id = ?', dropSetId);
+  }
+
   // 3. Queries and Summaries
   async getLastCompletedWorkout(): Promise<WorkoutSummary | null> {
     const workouts = await this.getRecentWorkouts(1);
@@ -303,8 +377,17 @@ export class WorkoutRepository {
         w.notes,
         w.created_at,
         COUNT(DISTINCT we.id) AS total_exercises,
-        COUNT(ws.id) AS total_sets,
-        COALESCE(SUM(ws.weight * ws.reps), 0) AS total_volume
+        COUNT(DISTINCT ws.id) AS total_sets,
+        (
+          COALESCE(SUM(ws.weight * ws.reps), 0) + 
+          COALESCE((
+            SELECT SUM(wds.weight * wds.reps)
+            FROM workout_drop_sets wds
+            JOIN workout_sets ws2 ON wds.workout_set_id = ws2.id
+            JOIN workout_exercises we2 ON ws2.workout_exercise_id = we2.id
+            WHERE we2.workout_id = w.id
+          ), 0)
+        ) AS total_volume
       FROM workouts w
       JOIN workout_types wt ON w.workout_type_id = wt.id
       LEFT JOIN workout_exercises we ON w.id = we.workout_id
@@ -376,6 +459,16 @@ export class WorkoutRepository {
       for (const set of sets) {
         totalSets += 1;
         totalVolume += set.weight * set.reps;
+
+        const dropSets = await this.db.getAllAsync<WorkoutDropSet>(
+          'SELECT id, workout_set_id, drop_order, weight, reps FROM workout_drop_sets WHERE workout_set_id = ? ORDER BY drop_order ASC',
+          set.id
+        );
+        set.drop_sets = dropSets;
+
+        for (const drop of dropSets) {
+          totalVolume += drop.weight * drop.reps;
+        }
       }
 
       exercises.push({

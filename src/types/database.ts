@@ -65,10 +65,20 @@ export interface WorkoutExercise {
   notes: string | null;
 }
 
+export interface WorkoutDropSet {
+  id: string;
+  workout_set_id: string;
+  drop_order: number;
+  weight: number;
+  reps: number;
+}
+
 export interface WorkoutSet {
   id: string;
   workout_exercise_id: string;
   set_number: number;
   weight: number;
   reps: number;
+  drop_sets?: WorkoutDropSet[];
 }
+

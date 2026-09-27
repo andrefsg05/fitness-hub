@@ -88,10 +88,21 @@ CREATE TABLE IF NOT EXISTS workout_sets (
   FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercises(id) ON DELETE CASCADE
 );
 
+-- 10. Workout Drop Sets
+CREATE TABLE IF NOT EXISTS workout_drop_sets (
+  id TEXT PRIMARY KEY,
+  workout_set_id TEXT NOT NULL,
+  drop_order INTEGER NOT NULL DEFAULT 1,
+  weight REAL NOT NULL DEFAULT 0,
+  reps INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (workout_set_id) REFERENCES workout_sets(id) ON DELETE CASCADE
+);
+
 -- Indexes for optimal performance
 CREATE INDEX IF NOT EXISTS idx_workouts_status_date ON workouts(status, date DESC);
 CREATE INDEX IF NOT EXISTS idx_workout_exercises_workout ON workout_exercises(workout_id);
 CREATE INDEX IF NOT EXISTS idx_workout_sets_exercise ON workout_sets(workout_exercise_id);
+CREATE INDEX IF NOT EXISTS idx_workout_drop_sets_set ON workout_drop_sets(workout_set_id);
 CREATE INDEX IF NOT EXISTS idx_exercises_category ON exercises(category);
 CREATE INDEX IF NOT EXISTS idx_bodyweight_logs_date ON bodyweight_logs(date DESC);
 `;
