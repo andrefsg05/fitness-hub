@@ -1,4 +1,5 @@
 import { LastWorkoutDrawer } from '@/components/LastWorkoutDrawer';
+import { PrBadge } from '@/components/PrBadge';
 import { Colors, Spacing } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
 import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
@@ -372,6 +373,11 @@ export default function ActiveWorkoutScreen() {
                       updateSet(set.id, set.weight, r);
                     }}
                   />
+                  {set.is_pr ? (
+                    <View style={styles.activePrBadgeContainer}>
+                      <PrBadge />
+                    </View>
+                  ) : null}
                   <Pressable onPress={() => deleteSet(set.id)} style={styles.deleteSetBtn}>
                     <Text style={{ color: colors.danger, fontSize: 14 }}>✕</Text>
                   </Pressable>
@@ -788,6 +794,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     fontSize: 14,
     opacity: 0.9,
+  },
+  activePrBadgeContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addDropSetContainer: {
     flexDirection: 'row',

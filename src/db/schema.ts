@@ -98,6 +98,19 @@ CREATE TABLE IF NOT EXISTS workout_drop_sets (
   FOREIGN KEY (workout_set_id) REFERENCES workout_sets(id) ON DELETE CASCADE
 );
 
+-- 11. Exercise PRs
+CREATE TABLE IF NOT EXISTS exercise_prs (
+  id TEXT PRIMARY KEY,
+  exercise_id TEXT NOT NULL,
+  workout_set_id TEXT NOT NULL,
+  weight REAL NOT NULL,
+  reps INTEGER NOT NULL,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  achieved_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE,
+  FOREIGN KEY (workout_set_id) REFERENCES workout_sets(id) ON DELETE CASCADE
+);
+
 -- Indexes for optimal performance
 CREATE INDEX IF NOT EXISTS idx_workouts_status_date ON workouts(status, date DESC);
 CREATE INDEX IF NOT EXISTS idx_workout_exercises_workout ON workout_exercises(workout_id);
@@ -105,4 +118,7 @@ CREATE INDEX IF NOT EXISTS idx_workout_sets_exercise ON workout_sets(workout_exe
 CREATE INDEX IF NOT EXISTS idx_workout_drop_sets_set ON workout_drop_sets(workout_set_id);
 CREATE INDEX IF NOT EXISTS idx_exercises_category ON exercises(category);
 CREATE INDEX IF NOT EXISTS idx_bodyweight_logs_date ON bodyweight_logs(date DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_active_pr_per_exercise ON exercise_prs(exercise_id) WHERE is_active = 1;
+CREATE INDEX IF NOT EXISTS idx_exercise_prs_history ON exercise_prs(exercise_id, achieved_at DESC);
+CREATE INDEX IF NOT EXISTS idx_exercise_prs_set ON exercise_prs(workout_set_id);
 `;

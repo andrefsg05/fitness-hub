@@ -1,4 +1,6 @@
+import { findBestSet, isBetterSet } from '@/services/prService';
 import {
+  ExercisePR,
   Workout,
   WorkoutDropSet,
   WorkoutExercise,
@@ -51,11 +53,63 @@ export class WorkoutRepository {
   }
 
   async finishWorkout(workoutId: string, notes: string | null = null): Promise<void> {
-    await this.db.runAsync(
-      "UPDATE workouts SET status = 'completed', notes = ? WHERE id = ?",
-      notes,
-      workoutId
-    );
+    await this.db.withTransactionAsync(async () => {
+      await this.db.runAsync(
+        "UPDATE workouts SET status = 'completed', notes = ? WHERE id = ?",
+        notes,
+        workoutId
+      );
+
+      // Evaluate PRs for each exercise in this workout
+      const exerciseRows = await this.db.getAllAsync<{ id: string; exercise_id: string }>(
+        'SELECT id, exercise_id FROM workout_exercises WHERE workout_id = ?',
+        workoutId
+      );
+
+      for (const exRow of exerciseRows) {
+        // Only standard sets count for PR calculation, excluding dropsets
+        const sets = await this.db.getAllAsync<WorkoutSet>(
+          'SELECT id, workout_exercise_id, set_number, weight, reps FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC',
+          exRow.id
+        );
+
+        const bestSet = findBestSet(sets);
+        if (!bestSet) {
+          continue;
+        }
+
+        const currentActivePR = await this.db.getFirstAsync<ExercisePR>(
+          'SELECT id, exercise_id, workout_set_id, weight, reps, is_active, achieved_at FROM exercise_prs WHERE exercise_id = ? AND is_active = 1',
+          exRow.exercise_id
+        );
+
+        let isNewRecord = false;
+        if (!currentActivePR) {
+          isNewRecord = true;
+        } else if (isBetterSet(bestSet, currentActivePR)) {
+          isNewRecord = true;
+        }
+
+        if (isNewRecord) {
+          if (currentActivePR) {
+            await this.db.runAsync(
+              'UPDATE exercise_prs SET is_active = 0 WHERE id = ?',
+              currentActivePR.id
+            );
+          }
+
+          const prId = `pr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+          await this.db.runAsync(
+            "INSERT INTO exercise_prs (id, exercise_id, workout_set_id, weight, reps, is_active, achieved_at) VALUES (?, ?, ?, ?, ?, 1, datetime('now'))",
+            prId,
+            exRow.exercise_id,
+            bestSet.id,
+            bestSet.weight,
+            bestSet.reps
+          );
+        }
+      }
+    });
   }
 
   async discardWorkout(workoutId: string): Promise<void> {
@@ -451,24 +505,46 @@ export class WorkoutRepository {
     const exercises: WorkoutExerciseWithDetails[] = [];
 
     for (const exRow of exerciseRows) {
-      const sets = await this.db.getAllAsync<WorkoutSet>(
-        'SELECT id, workout_exercise_id, set_number, weight, reps FROM workout_sets WHERE workout_exercise_id = ? ORDER BY set_number ASC',
+      const setRows = await this.db.getAllAsync<{
+        id: string;
+        workout_exercise_id: string;
+        set_number: number;
+        weight: number;
+        reps: number;
+        is_pr: number;
+      }>(
+        `SELECT ws.id, ws.workout_exercise_id, ws.set_number, ws.weight, ws.reps,
+                CASE WHEN ep.id IS NOT NULL THEN 1 ELSE 0 END AS is_pr
+         FROM workout_sets ws
+         LEFT JOIN exercise_prs ep ON ep.workout_set_id = ws.id AND ep.is_active = 1
+         WHERE ws.workout_exercise_id = ? 
+         ORDER BY ws.set_number ASC`,
         exRow.id
       );
 
-      for (const set of sets) {
+      const sets: WorkoutSet[] = [];
+      for (const row of setRows) {
         totalSets += 1;
-        totalVolume += set.weight * set.reps;
+        totalVolume += row.weight * row.reps;
 
         const dropSets = await this.db.getAllAsync<WorkoutDropSet>(
           'SELECT id, workout_set_id, drop_order, weight, reps FROM workout_drop_sets WHERE workout_set_id = ? ORDER BY drop_order ASC',
-          set.id
+          row.id
         );
-        set.drop_sets = dropSets;
 
         for (const drop of dropSets) {
           totalVolume += drop.weight * drop.reps;
         }
+
+        sets.push({
+          id: row.id,
+          workout_exercise_id: row.workout_exercise_id,
+          set_number: row.set_number,
+          weight: row.weight,
+          reps: row.reps,
+          is_pr: Boolean(row.is_pr),
+          drop_sets: dropSets,
+        });
       }
 
       exercises.push({

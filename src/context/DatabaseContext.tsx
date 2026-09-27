@@ -3,6 +3,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase, initializeDatabase } from '@/db/database';
 import {
   ExerciseRepository,
+  ExercisePrRepository,
   HabitRepository,
   UserRepository,
   WorkoutRepository,
@@ -18,6 +19,7 @@ interface DatabaseContextValue {
   workoutTypeRepo: WorkoutTypeRepository | null;
   exerciseRepo: ExerciseRepository | null;
   workoutRepo: WorkoutRepository | null;
+  exercisePrRepo: ExercisePrRepository | null;
 }
 
 const DatabaseContext = createContext<DatabaseContextValue>({
@@ -29,6 +31,7 @@ const DatabaseContext = createContext<DatabaseContextValue>({
   workoutTypeRepo: null,
   exerciseRepo: null,
   workoutRepo: null,
+  exercisePrRepo: null,
 });
 
 export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -41,6 +44,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     workoutTypeRepo: null,
     exerciseRepo: null,
     workoutRepo: null,
+    exercisePrRepo: null,
   });
 
   useEffect(() => {
@@ -59,6 +63,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             workoutTypeRepo: new WorkoutTypeRepository(database),
             exerciseRepo: new ExerciseRepository(database),
             workoutRepo: new WorkoutRepository(database),
+            exercisePrRepo: new ExercisePrRepository(database),
           });
           setIsReady(true);
         }

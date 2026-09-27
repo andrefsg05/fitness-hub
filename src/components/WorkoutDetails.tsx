@@ -1,3 +1,4 @@
+import { PrBadge } from './PrBadge';
 import { Colors, Spacing } from '@/constants/theme';
 import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
 import { WorkoutExerciseWithDetails, WorkoutWithDetails } from '@/types';
@@ -60,9 +61,16 @@ function ExerciseCard({
               <Text style={[styles.setValueText, { color: colors.text }, styles.weightCol]}>
                 {set.weight} <Text style={styles.unitText}>kg</Text>
               </Text>
-              <Text style={[styles.setValueText, { color: colors.text }, styles.repsCol]}>
-                {set.reps}
-              </Text>
+              <View style={styles.repsCell}>
+                <Text style={[styles.setValueText, { color: colors.text }]}>
+                  {set.reps}
+                </Text>
+                {set.is_pr ? (
+                  <View style={styles.repsPrBadge}>
+                    <PrBadge />
+                  </View>
+                ) : null}
+              </View>
             </View>
 
             {set.drop_sets && set.drop_sets.map((drop, dIdx) => (
@@ -80,9 +88,11 @@ function ExerciseCard({
                 <Text style={[styles.dropSetValueText, { color: colors.textSecondary }, styles.weightCol]}>
                   {drop.weight} <Text style={styles.unitText}>kg</Text>
                 </Text>
-                <Text style={[styles.dropSetValueText, { color: colors.textSecondary }, styles.repsCol]}>
-                  {drop.reps}
-                </Text>
+                <View style={styles.repsCell}>
+                  <Text style={[styles.dropSetValueText, { color: colors.textSecondary }]}>
+                    {drop.reps}
+                  </Text>
+                </View>
               </View>
             ))}
           </View>
@@ -432,6 +442,17 @@ const styles = StyleSheet.create({
   repsCol: {
     flex: 1,
     textAlign: 'center',
+  },
+  repsCell: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  repsPrBadge: {
+    position: 'absolute',
+    right: Spacing.two,
   },
   setHeaderText: {
     fontSize: 10,

@@ -1,5 +1,7 @@
 import { getDatabase } from '@/db/database';
+import { ExercisePrRepository } from '@/db/repositories/exercisePrRepository';
 import { WorkoutRepository } from '@/db/repositories/workoutRepository';
+import { annotateSetsWithPRs } from '@/services/prService';
 import { useWorkoutsStore } from '@/stores/useWorkoutsStore';
 import { WorkoutWithDetails } from '@/types';
 import { create } from 'zustand';
@@ -37,9 +39,48 @@ interface ActiveWorkoutState {
   discardWorkout: () => Promise<void>;
 }
 
-const getRepo = async () => {
+const getRepos = async () => {
   const db = await getDatabase();
-  return new WorkoutRepository(db);
+  return {
+    workoutRepo: new WorkoutRepository(db),
+    prRepo: new ExercisePrRepository(db),
+  };
+};
+
+async function enrichWithLivePRs(
+  workout: WorkoutWithDetails | null,
+  prRepo: ExercisePrRepository
+): Promise<WorkoutWithDetails | null> {
+  if (!workout) return null;
+
+  const exerciseIds = workout.exercises.map((e) => e.exercise_id);
+  if (exerciseIds.length === 0) return workout;
+
+  const activePRs = await prRepo.getActivePRsForExercises(exerciseIds);
+
+  const enrichedExercises = workout.exercises.map((ex) => {
+    const currentPR = activePRs[ex.exercise_id] || null;
+    return {
+      ...ex,
+      sets: annotateSetsWithPRs(ex.sets, currentPR),
+    };
+  });
+
+  return {
+    ...workout,
+    exercises: enrichedExercises,
+  };
+}
+
+const refreshActiveWorkout = async (
+  workoutRepo: WorkoutRepository,
+  prRepo: ExercisePrRepository,
+  set: (state: Partial<ActiveWorkoutState>) => void
+): Promise<WorkoutWithDetails | null> => {
+  const active = await workoutRepo.getActiveWorkout();
+  const enriched = await enrichWithLivePRs(active, prRepo);
+  set({ activeWorkout: enriched });
+  return enriched;
 };
 
 export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
@@ -49,9 +90,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
   fetchActiveWorkout: async () => {
     try {
       set({ isLoading: true });
-      const repo = await getRepo();
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
+      const { workoutRepo, prRepo } = await getRepos();
+      await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error fetching active workout in store:', err);
     } finally {
@@ -61,11 +101,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   startWorkout: async (workoutTypeId: string) => {
     try {
-      const repo = await getRepo();
-      await repo.startWorkout(workoutTypeId);
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
-      return active;
+      const { workoutRepo, prRepo } = await getRepos();
+      await workoutRepo.startWorkout(workoutTypeId);
+      return await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error starting workout in store:', err);
       return null;
@@ -74,20 +112,19 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   copyWorkout: async (sourceWorkout: WorkoutWithDetails) => {
     try {
-      const repo = await getRepo();
-      const currentActive = get().activeWorkout ?? (await repo.getActiveWorkout());
+      const { workoutRepo, prRepo } = await getRepos();
+      const currentActive = get().activeWorkout ?? (await workoutRepo.getActiveWorkout());
 
       if (!currentActive) {
-        const newWorkout = await repo.createWorkoutFromTemplate(sourceWorkout);
-        set({ activeWorkout: newWorkout });
-        return { isNew: true, count: newWorkout.exercises.length };
+        const newWorkout = await workoutRepo.createWorkoutFromTemplate(sourceWorkout);
+        const enriched = await refreshActiveWorkout(workoutRepo, prRepo, set);
+        return { isNew: true, count: enriched?.exercises.length ?? newWorkout.exercises.length };
       } else {
-        const count = await repo.copyMissingExercisesToWorkout(
+        const count = await workoutRepo.copyMissingExercisesToWorkout(
           currentActive.id,
           sourceWorkout.exercises
         );
-        const updated = await repo.getActiveWorkout();
-        set({ activeWorkout: updated });
+        await refreshActiveWorkout(workoutRepo, prRepo, set);
         return { isNew: false, count };
       }
     } catch (err) {
@@ -100,10 +137,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     const { activeWorkout } = get();
     if (!activeWorkout) return;
     try {
-      const repo = await getRepo();
-      await repo.addExerciseToWorkout(activeWorkout.id, exerciseId);
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
+      const { workoutRepo, prRepo } = await getRepos();
+      await workoutRepo.addExerciseToWorkout(activeWorkout.id, exerciseId);
+      await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error adding exercise in store:', err);
     }
@@ -111,10 +147,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   removeExercise: async (workoutExerciseId: string) => {
     try {
-      const repo = await getRepo();
-      await repo.removeExerciseFromWorkout(workoutExerciseId);
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
+      const { workoutRepo, prRepo } = await getRepos();
+      await workoutRepo.removeExerciseFromWorkout(workoutExerciseId);
+      await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error removing exercise in store:', err);
     }
@@ -122,10 +157,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   addSet: async (workoutExerciseId: string, setNumber: number, weight: number, reps: number) => {
     try {
-      const repo = await getRepo();
-      await repo.addSet(workoutExerciseId, setNumber, weight, reps);
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
+      const { workoutRepo, prRepo } = await getRepos();
+      await workoutRepo.addSet(workoutExerciseId, setNumber, weight, reps);
+      await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error adding set in store:', err);
     }
@@ -133,10 +167,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   updateSet: async (setId: string, weight: number, reps: number) => {
     try {
-      const repo = await getRepo();
-      await repo.updateSet(setId, weight, reps);
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
+      const { workoutRepo, prRepo } = await getRepos();
+      await workoutRepo.updateSet(setId, weight, reps);
+      await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error updating set in store:', err);
     }
@@ -144,10 +177,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   deleteSet: async (setId: string) => {
     try {
-      const repo = await getRepo();
-      await repo.deleteSet(setId);
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
+      const { workoutRepo, prRepo } = await getRepos();
+      await workoutRepo.deleteSet(setId);
+      await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error deleting set in store:', err);
     }
@@ -155,10 +187,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   addDropSet: async (workoutSetId: string, weight: number, reps: number) => {
     try {
-      const repo = await getRepo();
-      await repo.addDropSet(workoutSetId, weight, reps);
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
+      const { workoutRepo, prRepo } = await getRepos();
+      await workoutRepo.addDropSet(workoutSetId, weight, reps);
+      await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error adding drop set in store:', err);
     }
@@ -166,10 +197,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   updateDropSet: async (dropSetId: string, weight: number, reps: number) => {
     try {
-      const repo = await getRepo();
-      await repo.updateDropSet(dropSetId, weight, reps);
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
+      const { workoutRepo, prRepo } = await getRepos();
+      await workoutRepo.updateDropSet(dropSetId, weight, reps);
+      await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error updating drop set in store:', err);
     }
@@ -177,10 +207,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   deleteDropSet: async (dropSetId: string) => {
     try {
-      const repo = await getRepo();
-      await repo.deleteDropSet(dropSetId);
-      const active = await repo.getActiveWorkout();
-      set({ activeWorkout: active });
+      const { workoutRepo, prRepo } = await getRepos();
+      await workoutRepo.deleteDropSet(dropSetId);
+      await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error deleting drop set in store:', err);
     }
@@ -190,8 +219,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     const { activeWorkout } = get();
     if (!activeWorkout) return;
     try {
-      const repo = await getRepo();
-      await repo.finishWorkout(activeWorkout.id, notes);
+      const { workoutRepo } = await getRepos();
+      await workoutRepo.finishWorkout(activeWorkout.id, notes);
       set({ activeWorkout: null });
       useWorkoutsStore.getState().fetchWorkouts();
     } catch (err) {
@@ -203,8 +232,8 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     const { activeWorkout } = get();
     if (!activeWorkout) return;
     try {
-      const repo = await getRepo();
-      await repo.discardWorkout(activeWorkout.id);
+      const { workoutRepo } = await getRepos();
+      await workoutRepo.discardWorkout(activeWorkout.id);
       set({ activeWorkout: null });
     } catch (err) {
       console.error('Error discarding workout in store:', err);

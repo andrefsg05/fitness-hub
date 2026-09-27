@@ -79,6 +79,17 @@ export interface WorkoutSet {
   set_number: number;
   weight: number;
   reps: number;
+  is_pr?: boolean;
   drop_sets?: WorkoutDropSet[];
+}
+
+export interface ExercisePR {
+  id: string;
+  exercise_id: string;
+  workout_set_id: string;
+  weight: number;
+  reps: number;
+  is_active: number; // 0 or 1
+  achieved_at: string;
 }
 
