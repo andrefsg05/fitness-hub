@@ -16,7 +16,6 @@ import {
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useUserStore } from '@/stores/useUserStore';
 import { useHabitsStore } from '@/stores/useHabitsStore';
-import { AppHeader } from '@/components/AppHeader';
 import { Colors, Spacing } from '@/constants/theme';
 
 export default function ProfileScreen() {
@@ -111,8 +110,6 @@ export default function ProfileScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
-
-      <AppHeader />
 
       {/* User Header Card */}
       <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>

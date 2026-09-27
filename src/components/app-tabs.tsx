@@ -1,13 +1,17 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, useColorScheme } from 'react-native';
+import { Colors } from '@/constants/theme';
 import PagerView from 'react-native-pager-view';
 import HomeScreen from '@/app/(tabs)/index';
 import WorkoutsScreen from '@/app/(tabs)/workouts';
 import ProfileScreen from '@/app/(tabs)/profile';
 import { CustomBottomTabBar } from './CustomBottomTabBar';
+import { AppHeader } from './AppHeader';
 import { useTabNavigationStore, TabIndex } from '@/stores/useTabNavigationStore';
 
 export default function AppTabs() {
+  const scheme = useColorScheme();
+  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const pagerRef = useRef<PagerView>(null);
   const currentPosition = useRef(0);
   const { activeTab, setActiveTab } = useTabNavigationStore();
@@ -30,7 +34,8 @@ export default function AppTabs() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <AppHeader />
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}

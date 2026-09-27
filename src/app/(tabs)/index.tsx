@@ -10,7 +10,6 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { AppHeader } from '@/components/AppHeader';
 import { WorkoutActionBanner } from '@/components/WorkoutActionBanner';
 import { WorkoutCard } from '@/components/WorkoutCard';
 import { useWorkoutsStore } from '@/stores/useWorkoutsStore';
@@ -73,8 +72,6 @@ export default function HomeScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
-
-      <AppHeader />
 
       {/* Header */}
       <View style={styles.header}>
