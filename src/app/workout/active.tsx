@@ -326,10 +326,17 @@ export default function ActiveWorkoutScreen() {
         activeWorkout.exercises.map((we, index) => (
           <View key={we.id} style={[styles.exerciseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.exerciseHeader}>
-              <View style={{ flex: 1 }}>
+              <View style={styles.exerciseTitleContainer}>
                 <Text style={[styles.exerciseName, { color: colors.text }]}>
                   {index + 1}. {we.exercise_name}
                 </Text>
+                {we.active_pr ? (
+                  <View style={[styles.exercisePrBadge, { backgroundColor: colors.backgroundElement }]}>
+                    <Text style={[styles.exercisePrBadgeText, { color: colors.textSecondary }]}>
+                      PR: {we.active_pr.weight}kg × {we.active_pr.reps}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
               <Pressable onPress={() => removeExercise(we.id)} style={{ padding: 4 }}>
                 <Text style={{ color: colors.danger, fontSize: 12 }}>Remove</Text>
@@ -737,9 +744,26 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: Spacing.two,
   },
+  exerciseTitleContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 5,
+  },
   exerciseName: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  exercisePrBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  exercisePrBadgeText: {
+    fontSize: 9,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   exerciseCategory: {
     fontSize: 12,

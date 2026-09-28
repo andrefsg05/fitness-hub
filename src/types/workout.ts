@@ -1,4 +1,4 @@
-import { Exercise, Workout, WorkoutExercise, WorkoutSet, WorkoutType } from './database';
+import { Workout, WorkoutExercise, WorkoutSet } from './database';
 
 export interface WorkoutSetInput {
   set_number: number;
@@ -17,6 +17,7 @@ export interface WorkoutExerciseWithDetails extends WorkoutExercise {
   exercise_name: string;
   category: string;
   sets: WorkoutSet[];
+  active_pr?: { weight: number; reps: number } | null;
 }
 
 export interface WorkoutWithDetails extends Workout {

@@ -62,6 +62,7 @@ async function enrichWithLivePRs(
     const currentPR = activePRs[ex.exercise_id] || null;
     return {
       ...ex,
+      active_pr: currentPR ? { weight: currentPR.weight, reps: currentPR.reps } : null,
       sets: annotateSetsWithPRs(ex.sets, currentPR),
     };
   });
