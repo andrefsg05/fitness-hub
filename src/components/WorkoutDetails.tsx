@@ -67,7 +67,7 @@ function ExerciseCard({
                 </Text>
                 {set.is_pr ? (
                   <View style={styles.repsPrBadge}>
-                    <PrBadge />
+                    <PrBadge exerciseId={exercise.exercise_id} />
                   </View>
                 ) : null}
               </View>

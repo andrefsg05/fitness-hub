@@ -331,11 +331,22 @@ export default function ActiveWorkoutScreen() {
                   {index + 1}. {we.exercise_name}
                 </Text>
                 {we.active_pr ? (
-                  <View style={[styles.exercisePrBadge, { backgroundColor: colors.backgroundElement }]}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.exercisePrBadge,
+                      { backgroundColor: colors.backgroundElement, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/statistics/prs',
+                        params: { exerciseId: we.exercise_id },
+                      })
+                    }
+                    hitSlop={6}>
                     <Text style={[styles.exercisePrBadgeText, { color: colors.textSecondary }]}>
                       PR: {we.active_pr.weight}kg × {we.active_pr.reps}
                     </Text>
-                  </View>
+                  </Pressable>
                 ) : null}
               </View>
               <Pressable onPress={() => removeExercise(we.id)} style={{ padding: 4 }}>
@@ -382,7 +393,7 @@ export default function ActiveWorkoutScreen() {
                   />
                   {set.is_pr ? (
                     <View style={styles.activePrBadgeContainer}>
-                      <PrBadge />
+                      <PrBadge exerciseId={we.exercise_id} />
                     </View>
                   ) : null}
                   <Pressable onPress={() => deleteSet(set.id)} style={styles.deleteSetBtn}>

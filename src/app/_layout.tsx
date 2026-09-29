@@ -101,6 +101,14 @@ function RootApp() {
               animation: 'slide_from_bottom',
             }}
           />
+          <Stack.Screen
+            name="statistics/prs"
+            options={{
+              presentation: 'modal',
+              headerShown: false,
+              animation: 'slide_from_bottom',
+            }}
+          />
         </Stack>
       </View>
     </ThemeProvider>
