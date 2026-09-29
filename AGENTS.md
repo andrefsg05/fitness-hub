@@ -16,6 +16,7 @@ Read `PROJECT.md` when broader product context is relevant to the task. Do not r
 * Expo
 * Expo Router
 * TypeScript
+* Zustand (State management)
 * SQLite for local persistence
 * React Native / Expo APIs
 
@@ -25,7 +26,7 @@ Current development environment:
 * WSL2
 * Ubuntu
 * VS Code / Antigravity IDE
-* Expo Go for development
+* Expo Go and Expo Development Build (`expo-dev-client`)
 
 The current MVP is offline-first.
 
@@ -65,14 +66,13 @@ Avoid unrelated refactoring, formatting changes or dependency updates.
 
 Keep responsibilities separated between:
 
-* UI
-* Screens/routes
-* Feature logic
-* Application state
-* Database/persistence
-* External services
-* Shared utilities
-* Domain types
+* UI (`src/components/`)
+* Screens/routes (`src/app/`)
+* Application state (`src/stores/` using Zustand)
+* Feature logic & domain services (`src/services/`)
+* Database & persistence (`src/db/repositories/`)
+* Shared utilities & constants (`src/constants/`)
+* Domain types (`src/types/`)
 
 Avoid putting database access or substantial business logic directly inside UI components.
 
@@ -113,12 +113,15 @@ Examples include:
 * Workout
 * Workout exercise
 * Set
+* Drop sets
+* Exercise PRs (Personal Records)
 * Repetitions
 * Weight
 * Duration
 * Body weight
 * Body measurements
 * Habits
+* Goals
 
 Do not store important application data only as formatted display strings.
 
@@ -214,9 +217,9 @@ Keep transient UI state separate from persistent application data.
 
 Do not use component state as a replacement for persistent storage.
 
-Avoid introducing a global state-management library unless the application's existing architecture demonstrates a clear need for it.
+Zustand is used for global application state (`src/stores/`), acting as the reactive bridge between the UI and local SQLite repositories.
 
-Prefer local state and simple patterns where appropriate.
+Follow the existing store pattern (`useActiveWorkoutStore`, `useWorkoutsStore`, `useHabitsStore`, `useUserStore`) when managing shared state. Keep stores focused and delegate direct database queries to their respective repositories.
 
 ---
 
