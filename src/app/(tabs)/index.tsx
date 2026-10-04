@@ -71,6 +71,8 @@ export default function HomeScreen() {
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      showsHorizontalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
 
       {/* Header */}

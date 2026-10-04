@@ -1,16 +1,30 @@
-import { DarkTheme, DefaultTheme, ThemeProvider, Stack, useRouter, useSegments } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import React, { useEffect } from 'react';
-import { ActivityIndicator, useColorScheme, View, Text } from 'react-native';
+import { useEffect } from 'react';
+import { ActivityIndicator, FlatList, ScrollView, Text, useColorScheme, View } from 'react-native';
+
+// Ocultar barras de scroll vertical e horizontal globalmente em toda a app
+(ScrollView as unknown as { defaultProps?: Record<string, unknown> }).defaultProps = {
+  ...((ScrollView as unknown as { defaultProps?: Record<string, unknown> }).defaultProps || {}),
+  showsVerticalScrollIndicator: false,
+  showsHorizontalScrollIndicator: false,
+};
+
+(FlatList as unknown as { defaultProps?: Record<string, unknown> }).defaultProps = {
+  ...((FlatList as unknown as { defaultProps?: Record<string, unknown> }).defaultProps || {}),
+  showsVerticalScrollIndicator: false,
+  showsHorizontalScrollIndicator: false,
+};
 
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useFonts, Aldrich_400Regular } from '@expo-google-fonts/aldrich';
+import { Aldrich_400Regular, useFonts } from '@expo-google-fonts/aldrich';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import { DatabaseProvider, useDatabase } from '@/context/DatabaseContext';
 import { Colors } from '@/constants/theme';
+import { DatabaseProvider, useDatabase } from '@/context/DatabaseContext';
 import { setupNotifications } from '@/services/notificationService';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserStore } from '@/stores/useUserStore';
 
 SplashScreen.preventAutoHideAsync();
@@ -29,6 +43,7 @@ function RootApp() {
   });
 
   const { user, isLoaded, fetchProfile } = useUserStore();
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
   const segments = useSegments();
   const router = useRouter();
 
@@ -39,8 +54,9 @@ function RootApp() {
   useEffect(() => {
     if (isReady) {
       fetchProfile();
+      fetchSettings();
     }
-  }, [isReady, fetchProfile]);
+  }, [isReady, fetchProfile, fetchSettings]);
 
   useEffect(() => {
     if (!fontsLoaded || !isReady || !isLoaded) return;
@@ -103,6 +119,14 @@ function RootApp() {
           />
           <Stack.Screen
             name="statistics/prs"
+            options={{
+              presentation: 'modal',
+              headerShown: false,
+              animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="profile/bodyweight"
             options={{
               presentation: 'modal',
               headerShown: false,

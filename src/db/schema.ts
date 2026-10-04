@@ -111,6 +111,12 @@ CREATE TABLE IF NOT EXISTS exercise_prs (
   FOREIGN KEY (workout_set_id) REFERENCES workout_sets(id) ON DELETE CASCADE
 );
 
+-- 12. App Settings
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 -- Indexes for optimal performance
 CREATE INDEX IF NOT EXISTS idx_workouts_status_date ON workouts(status, date DESC);
 CREATE INDEX IF NOT EXISTS idx_workout_exercises_workout ON workout_exercises(workout_id);
@@ -122,3 +128,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_active_pr_per_exercise ON exercise_prs(exe
 CREATE INDEX IF NOT EXISTS idx_exercise_prs_history ON exercise_prs(exercise_id, achieved_at DESC);
 CREATE INDEX IF NOT EXISTS idx_exercise_prs_set ON exercise_prs(workout_set_id);
 `;
+

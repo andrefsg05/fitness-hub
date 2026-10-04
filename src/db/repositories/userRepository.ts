@@ -87,7 +87,7 @@ export class UserRepository {
 
   async getWeightHistory(limit: number = 30, userId: string = DEFAULT_USER_ID): Promise<BodyweightLog[]> {
     return await this.db.getAllAsync<BodyweightLog>(
-      'SELECT id, user_id, weight, date, created_at FROM bodyweight_logs WHERE user_id = ? ORDER BY date DESC LIMIT ?',
+      'SELECT id, user_id, weight, date, created_at FROM bodyweight_logs WHERE user_id = ? ORDER BY date DESC, created_at DESC LIMIT ?',
       userId,
       limit
     );
@@ -110,4 +110,10 @@ export class UserRepository {
       created_at: new Date().toISOString(),
     };
   }
+
+  async deleteWeightLog(id: string): Promise<boolean> {
+    const result = await this.db.runAsync('DELETE FROM bodyweight_logs WHERE id = ?', id);
+    return result.changes > 0;
+  }
 }
+

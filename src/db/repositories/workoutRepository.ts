@@ -572,4 +572,12 @@ export class WorkoutRepository {
       total_volume: totalVolume,
     };
   }
+
+  async getCompletedWorkoutsCountForMonth(yearMonth: string): Promise<number> {
+    const result = await this.db.getFirstAsync<{ count: number }>(
+      "SELECT COUNT(*) as count FROM workouts WHERE status = 'completed' AND date LIKE ?",
+      `${yearMonth}%`
+    );
+    return result?.count ?? 0;
+  }
 }

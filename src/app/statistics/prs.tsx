@@ -445,6 +445,8 @@ export default function ExercisePrsScreen() {
           <ScrollView
             contentContainerStyle={styles.modalListContent}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
           >
             {filteredExercises.length === 0 ? (
               <View style={styles.modalEmptyContainer}>

@@ -66,6 +66,8 @@ export default function OnboardingScreen() {
             styles.scrollContent,
             { paddingTop: Spacing.four, paddingBottom: insets.bottom + Spacing.four },
           ]}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
           
           {/* Logo & Header */}

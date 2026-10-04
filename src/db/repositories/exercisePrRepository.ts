@@ -76,4 +76,12 @@ export class ExercisePrRepository {
       achieved_at: achievedAt,
     };
   }
+
+  async getPRsCountForMonth(yearMonth: string): Promise<number> {
+    const result = await this.db.getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM exercise_prs WHERE achieved_at LIKE ?',
+      `${yearMonth}%`
+    );
+    return result?.count ?? 0;
+  }
 }

@@ -298,7 +298,11 @@ export default function ActiveWorkoutScreen() {
     });
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      showsHorizontalScrollIndicator={false}>
       {/* Top Pull-Down Drawer: Last Workout Details */}
       {lastWorkout && (
         <LastWorkoutDrawer workout={lastWorkout} />
@@ -550,7 +554,11 @@ export default function ActiveWorkoutScreen() {
             <View style={[styles.exerciseDivider, { backgroundColor: colors.border }]} />
           </View>
 
-          <ScrollView contentContainerStyle={styles.exerciseSelectionList} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.exerciseSelectionList}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}>
             {filteredExercises.length === 0 ? (
               <View style={styles.emptySearchContainer}>
                 <Text style={[styles.emptySearchText, { color: colors.textSecondary }]}>

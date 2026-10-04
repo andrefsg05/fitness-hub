@@ -1,22 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import { EditProfileModal } from '@/components/profile/EditProfileModal';
+import { GoalsTab } from '@/components/profile/GoalsTab';
+import { ProfileHeader } from '@/components/profile/ProfileHeader';
+import { ProfileTabBar, ProfileTabKey } from '@/components/profile/ProfileTabBar';
+import { ProgressTab } from '@/components/profile/ProgressTab';
+import { RemindersTab } from '@/components/profile/RemindersTab';
+import { SettingsTab } from '@/components/profile/SettingsTab';
+import { Colors, Spacing } from '@/constants/theme';
+import { useHabitsStore } from '@/stores/useHabitsStore';
+import { useUserStore } from '@/stores/useUserStore';
+import { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  Modal,
-  Platform,
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Switch,
-  Text,
-  TextInput,
   View,
   useColorScheme,
 } from 'react-native';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { useUserStore } from '@/stores/useUserStore';
-import { useHabitsStore } from '@/stores/useHabitsStore';
-import { Colors, Spacing } from '@/constants/theme';
+import Animated, {
+  SlideInLeft,
+  SlideInRight,
+  SlideOutLeft,
+  SlideOutRight,
+} from 'react-native-reanimated';
+
+const TAB_ORDER: ProfileTabKey[] = ['progress', 'goals', 'reminders', 'settings'];
 
 export default function ProfileScreen() {
   const scheme = useColorScheme();
@@ -25,50 +32,30 @@ export default function ProfileScreen() {
   const {
     user,
     latestWeight,
+    weightHistory,
     goals,
+    monthlyStats,
     logWeight,
     addGoal,
     toggleGoal,
     deleteGoal,
+    updateProfile,
     fetchProfile,
   } = useUserStore();
+
   const { habits, addHabit, toggleActive, deleteHabit, fetchHabits } = useHabitsStore();
 
+  const [activeTab, setActiveTab] = useState<ProfileTabKey>('progress');
+  const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
+  const activeTabRef = useRef<ProfileTabKey>('progress');
+
   const [refreshing, setRefreshing] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
 
   useEffect(() => {
     fetchProfile();
     fetchHabits();
   }, [fetchProfile, fetchHabits]);
-
-  // Modals state
-  const [showWeightModal, setShowWeightModal] = useState(false);
-  const [weightInput, setWeightInput] = useState('');
-
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [goalTitle, setGoalTitle] = useState('');
-  const [goalDate, setGoalDate] = useState('');
-
-  const [showHabitModal, setShowHabitModal] = useState(false);
-  const [habitName, setHabitName] = useState('');
-  const [habitDate, setHabitDate] = useState<Date>(() => {
-    const d = new Date();
-    d.setHours(8, 0, 0, 0);
-    return d;
-  });
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekdays' | 'weekly'>('daily');
-
-  const formattedHabitTime = `${String(habitDate.getHours()).padStart(2, '0')}:${String(habitDate.getMinutes()).padStart(2, '0')}`;
-
-  const onTimeChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowTimePicker(false);
-    }
-    if (selectedDate && (event.type === 'set' || Platform.OS === 'ios')) {
-      setHabitDate(selectedDate);
-    }
-  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -76,280 +63,91 @@ export default function ProfileScreen() {
     setRefreshing(false);
   };
 
-  const handleLogWeight = async () => {
-    const parsed = parseFloat(weightInput);
-    if (isNaN(parsed) || parsed <= 0) return;
-    await logWeight(parsed);
-    setWeightInput('');
-    setShowWeightModal(false);
+  const handleSelectTab = (newTab: ProfileTabKey) => {
+    if (newTab === activeTab) return;
+    const currentIndex = TAB_ORDER.indexOf(activeTabRef.current);
+    const nextIndex = TAB_ORDER.indexOf(newTab);
+    const direction = nextIndex >= currentIndex ? 'forward' : 'backward';
+
+    setSlideDirection(direction);
+    activeTabRef.current = newTab;
+    setActiveTab(newTab);
   };
 
-  const handleAddGoal = async () => {
-    if (!goalTitle.trim()) return;
-    await addGoal(goalTitle.trim(), goalDate.trim() || null);
-    setGoalTitle('');
-    setGoalDate('');
-    setShowGoalModal(false);
-  };
+  const enteringAnimation =
+    slideDirection === 'forward'
+      ? SlideInRight.duration(240)
+      : SlideInLeft.duration(240);
 
-  const handleAddHabit = async () => {
-    if (!habitName.trim()) return;
-    await addHabit(habitName.trim(), habitFrequency, formattedHabitTime);
-    setHabitName('');
-    const d = new Date();
-    d.setHours(8, 0, 0, 0);
-    setHabitDate(d);
-    setShowTimePicker(false);
-    setShowHabitModal(false);
-  };
-
-
+  const exitingAnimation =
+    slideDirection === 'forward'
+      ? SlideOutLeft.duration(180)
+      : SlideOutRight.duration(180);
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      showsHorizontalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
 
-      {/* User Header Card */}
-      <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{(user?.name?.[0] ?? 'A').toUpperCase()}</Text>
-        </View>
-        <View style={styles.profileInfo}>
-          <Text style={[styles.userName, { color: colors.text }]}>{user?.name ?? 'Athlete'}</Text>
-          <Text style={[styles.userSubtitle, { color: colors.textSecondary }]}>Personal Fitness Profile</Text>
-        </View>
-      </View>
+      {/* 1. User Header Presentation */}
+      <ProfileHeader
+        user={user}
+        monthlyStats={monthlyStats}
+        onEditPress={() => setShowEditProfileModal(true)}
+      />
 
-      {/* Bodyweight Section */}
-      <View style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Bodyweight</Text>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-              {latestWeight ? `Current: ${latestWeight.weight} kg (${latestWeight.date})` : 'No weight logged yet'}
-            </Text>
-          </View>
-          <Pressable
-            style={[styles.smallActionBtn, { backgroundColor: colors.primary }]}
-            onPress={() => setShowWeightModal(true)}>
-            <Text style={styles.smallActionText}>+ Log Weight</Text>
-          </Pressable>
-        </View>
-      </View>
+      {/* 2. Horizontal Tab Menu */}
+      <ProfileTabBar
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+      />
 
-      {/* Goals Section */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={[styles.mainSectionTitle, { color: colors.text }]}>Goals & Targets</Text>
-        <Pressable
-          style={[styles.smallActionBtn, { backgroundColor: colors.backgroundElement }]}
-          onPress={() => setShowGoalModal(true)}>
-          <Text style={[styles.smallActionTextSecondary, { color: colors.text }]}>+ New Goal</Text>
-        </Pressable>
-      </View>
+      {/* 3. Animated Tab Content with Slide Transition */}
+      <Animated.View
+        key={activeTab}
+        entering={enteringAnimation}
+        exiting={exitingAnimation}
+        style={styles.tabContentContainer}>
+        {activeTab === 'progress' && (
+          <ProgressTab
+            user={user}
+            latestWeight={latestWeight}
+            weightHistory={weightHistory}
+            onLogWeight={logWeight}
+          />
+        )}
 
-      {goals.length === 0 ? (
-        <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No fitness goals set yet.</Text>
-        </View>
-      ) : (
-        <View style={[styles.itemsList, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {goals.map((g, idx) => (
-            <View
-              key={g.id}
-              style={[
-                styles.itemRow,
-                idx < goals.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
-              ]}>
-              <Pressable
-                style={[styles.checkbox, g.is_completed === 1 && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                onPress={() => toggleGoal(g.id, g.is_completed !== 1)}>
-                {g.is_completed === 1 && <Text style={styles.checkmark}>✓</Text>}
-              </Pressable>
-              <View style={styles.itemContent}>
-                <Text style={[styles.itemTitle, { color: colors.text }, g.is_completed === 1 && styles.completedText]}>
-                  {g.title}
-                </Text>
-                {g.target_date && (
-                  <Text style={[styles.itemSub, { color: colors.textSecondary }]}>Target: {g.target_date}</Text>
-                )}
-              </View>
-              <Pressable onPress={() => deleteGoal(g.id)} style={{ padding: 6 }}>
-                <Text style={{ color: colors.danger, fontSize: 13 }}>✕</Text>
-              </Pressable>
-            </View>
-          ))}
-        </View>
-      )}
+        {activeTab === 'goals' && (
+          <GoalsTab
+            goals={goals}
+            onAddGoal={addGoal}
+            onToggleGoal={toggleGoal}
+            onDeleteGoal={deleteGoal}
+          />
+        )}
 
-      {/* Habits & Reminders Section */}
-      <View style={[styles.sectionHeaderRow, { marginTop: Spacing.four }]}>
-        <Text style={[styles.mainSectionTitle, { color: colors.text }]}>Habits & Reminders</Text>
-        <Pressable
-          style={[styles.smallActionBtn, { backgroundColor: colors.backgroundElement }]}
-          onPress={() => setShowHabitModal(true)}>
-          <Text style={[styles.smallActionTextSecondary, { color: colors.text }]}>+ New Habit</Text>
-        </Pressable>
-      </View>
+        {activeTab === 'reminders' && (
+          <RemindersTab
+            habits={habits}
+            onAddHabit={addHabit}
+            onToggleActive={toggleActive}
+            onDeleteHabit={deleteHabit}
+          />
+        )}
 
-      {habits.length === 0 ? (
-        <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No habits registered.</Text>
-        </View>
-      ) : (
-        <View style={[styles.itemsList, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {habits.map((h, idx) => (
-            <View
-              key={h.id}
-              style={[
-                styles.itemRow,
-                idx < habits.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
-              ]}>
-              <View style={styles.itemContent}>
-                <Text style={[styles.itemTitle, { color: colors.text }]}>{h.name}</Text>
-                <Text style={[styles.itemSub, { color: colors.textSecondary }]}>
-                  {h.frequency} • {h.reminder_time ? `⏰ ${h.reminder_time}` : 'No reminder'}
-                </Text>
-              </View>
-              <Switch
-                value={h.is_active === 1}
-                onValueChange={(val) => toggleActive(h.id, val)}
-                trackColor={{ false: colors.border, true: colors.accent }}
-              />
-              <Pressable onPress={() => deleteHabit(h.id)} style={{ padding: 6, marginLeft: 8 }}>
-                <Text style={{ color: colors.danger, fontSize: 13 }}>✕</Text>
-              </Pressable>
-            </View>
-          ))}
-        </View>
-      )}
+        {activeTab === 'settings' && <SettingsTab />}
+      </Animated.View>
 
-
-
-      {/* Modal: Log Weight */}
-      <Modal
-        visible={showWeightModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowWeightModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.dialogTitle, { color: colors.text }]}>Log Today's Bodyweight</Text>
-            <TextInput
-              style={[styles.textInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-              placeholder="e.g. 81.5"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
-              value={weightInput}
-              onChangeText={setWeightInput}
-              autoFocus
-            />
-            <View style={styles.dialogActions}>
-              <Pressable style={styles.dialogCancelBtn} onPress={() => setShowWeightModal(false)}>
-                <Text style={{ color: colors.textSecondary }}>Cancel</Text>
-              </Pressable>
-              <Pressable style={[styles.dialogConfirmBtn, { backgroundColor: colors.primary }]} onPress={handleLogWeight}>
-                <Text style={{ color: '#FFF', fontWeight: '700' }}>Save</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal: New Goal */}
-      <Modal
-        visible={showGoalModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowGoalModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.dialogTitle, { color: colors.text }]}>Add New Goal</Text>
-            <TextInput
-              style={[styles.textInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-              placeholder="e.g. Squat 140kg or Run 5k"
-              placeholderTextColor={colors.textSecondary}
-              value={goalTitle}
-              onChangeText={setGoalTitle}
-            />
-            <TextInput
-              style={[styles.textInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-              placeholder="Target Date (YYYY-MM-DD)"
-              placeholderTextColor={colors.textSecondary}
-              value={goalDate}
-              onChangeText={setGoalDate}
-            />
-            <View style={styles.dialogActions}>
-              <Pressable style={styles.dialogCancelBtn} onPress={() => setShowGoalModal(false)}>
-                <Text style={{ color: colors.textSecondary }}>Cancel</Text>
-              </Pressable>
-              <Pressable style={[styles.dialogConfirmBtn, { backgroundColor: colors.primary }]} onPress={handleAddGoal}>
-                <Text style={{ color: '#FFF', fontWeight: '700' }}>Add Goal</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal: New Habit */}
-      <Modal
-        visible={showHabitModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowHabitModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.dialogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.dialogTitle, { color: colors.text }]}>New Habit / Reminder</Text>
-
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Habit Name</Text>
-            <TextInput
-              style={[styles.textInput, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-              placeholder="e.g. Drink 3L Water"
-              placeholderTextColor={colors.textSecondary}
-              value={habitName}
-              onChangeText={setHabitName}
-            />
-
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Reminder Time</Text>
-            <Pressable
-              style={[
-                styles.timePickerButton,
-                { backgroundColor: colors.backgroundElement, borderColor: colors.border }
-              ]}
-              onPress={() => setShowTimePicker(true)}
-            >
-              <Text style={{ fontSize: 18 }}>⏰</Text>
-              <Text style={[styles.timePickerText, { color: colors.text }]}>
-                {formattedHabitTime}
-              </Text>
-            </Pressable>
-
-            {/* DateTimePicker on Android (modal dialog) or inline/spinner */}
-            {showTimePicker && (
-              <DateTimePicker
-                value={habitDate}
-                mode="time"
-                is24Hour={true}
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={onTimeChange}
-                textColor={colors.text}
-              />
-            )}
-
-            <View style={styles.dialogActions}>
-              <Pressable style={styles.dialogCancelBtn} onPress={() => setShowHabitModal(false)}>
-                <Text style={{ color: colors.textSecondary }}>Cancel</Text>
-              </Pressable>
-              <Pressable style={[styles.dialogConfirmBtn, { backgroundColor: colors.primary }]} onPress={handleAddHabit}>
-                <Text style={{ color: '#FFF', fontWeight: '700' }}>Save Habit</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-
+      {/* 4. Edit Profile Modal */}
+      <EditProfileModal
+        visible={showEditProfileModal}
+        user={user}
+        onClose={() => setShowEditProfileModal(false)}
+        onSave={updateProfile}
+      />
 
       <View style={{ height: Spacing.six }} />
     </ScrollView>
@@ -364,186 +162,7 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     paddingTop: Spacing.half,
   },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.three,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: Spacing.three,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#2563EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.three,
-  },
-  avatarText: {
-    color: '#FFF',
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  userSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  sectionCard: {
-    borderRadius: 16,
-    padding: Spacing.three,
-    borderWidth: 1,
-    marginBottom: Spacing.four,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.two,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  mainSectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  smallActionBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  smallActionText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  smallActionTextSecondary: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  itemsList: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.three,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#94A3B8',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.three,
-  },
-  checkmark: {
-    color: '#FFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  itemContent: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  completedText: {
-    textDecorationLine: 'line-through',
-    opacity: 0.6,
-  },
-  itemSub: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  emptyCard: {
-    borderRadius: 14,
-    padding: Spacing.four,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  emptyText: {
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.four,
-  },
-  dialogCard: {
+  tabContentContainer: {
     width: '100%',
-    maxWidth: 400,
-    borderRadius: 20,
-    padding: Spacing.four,
-    borderWidth: 1,
-  },
-  dialogTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: Spacing.three,
-  },
-  textInput: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    fontSize: 15,
-    marginBottom: Spacing.three,
-  },
-  inputLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  timePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: Spacing.three,
-    gap: Spacing.two,
-  },
-  timePickerText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  dialogActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: Spacing.two,
-  },
-  dialogCancelBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  dialogConfirmBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
   },
 });
