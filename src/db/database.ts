@@ -30,6 +30,11 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase): Promise<voi
   } catch {
     // Column already exists
   }
+  try {
+    await db.execAsync('ALTER TABLE habits ADD COLUMN streak_count INTEGER NOT NULL DEFAULT 0;');
+  } catch {
+    // Column already exists
+  }
 
   // Run seed data
   await seedDatabase(db);

@@ -30,6 +30,7 @@ export interface Habit {
   reminder_time: string | null; // HH:MM
   is_active: number; // 0 or 1
   last_checked?: string | null; // YYYY-MM-DD
+  streak_count?: number;
   created_at: string;
 }
 

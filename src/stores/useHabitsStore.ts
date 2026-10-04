@@ -4,6 +4,7 @@ import { getDatabase } from '@/db/database';
 import { HabitRepository } from '@/db/repositories/habitRepository';
 import {
   getTodayDateString,
+  getYesterdayDateString,
   scheduleHabitReminder,
   cancelHabitReminder,
   syncAllHabitsNotifications,
@@ -38,6 +39,9 @@ export const useHabitsStore = create<HabitsState>((set, get) => ({
     try {
       set({ isLoading: true });
       const repo = await getRepo();
+      const yesterdayStr = getYesterdayDateString();
+      await repo.resetExpiredStreaks(yesterdayStr);
+
       const [all, active] = await Promise.all([
         repo.getAll(),
         repo.getActive(),
@@ -82,6 +86,7 @@ export const useHabitsStore = create<HabitsState>((set, get) => ({
 
   toggleCheckHabit: async (habitId) => {
     const todayStr = getTodayDateString();
+    const yesterdayStr = getYesterdayDateString();
     const habit = get().habits.find((h) => h.id === habitId);
     if (!habit) return;
 
@@ -89,23 +94,41 @@ export const useHabitsStore = create<HabitsState>((set, get) => ({
     const nextChecked = !isCurrentlyChecked;
     const nextLastChecked = nextChecked ? todayStr : null;
 
+    const currentStreak = habit.streak_count ?? 0;
+    let nextStreak = currentStreak;
+
+    if (nextChecked) {
+      if (habit.last_checked === yesterdayStr) {
+        nextStreak = currentStreak + 1;
+      } else {
+        nextStreak = 1;
+      }
+    } else {
+      nextStreak = Math.max(0, currentStreak - 1);
+    }
+
     // Optimistic UI update
     set((state) => ({
       habits: state.habits.map((h) =>
-        h.id === habitId ? { ...h, last_checked: nextLastChecked } : h
+        h.id === habitId
+          ? { ...h, last_checked: nextLastChecked, streak_count: nextStreak }
+          : h
       ),
       activeHabits: state.activeHabits.map((h) =>
-        h.id === habitId ? { ...h, last_checked: nextLastChecked } : h
+        h.id === habitId
+          ? { ...h, last_checked: nextLastChecked, streak_count: nextStreak }
+          : h
       ),
     }));
 
     try {
       const repo = await getRepo();
-      await repo.toggleCheckIn(habitId, nextChecked, todayStr);
+      await repo.toggleCheckIn(habitId, nextChecked, todayStr, nextStreak);
 
       const updatedHabit: Habit = {
         ...habit,
         last_checked: nextLastChecked,
+        streak_count: nextStreak,
       };
 
       // Reschedule or update notification based on new status

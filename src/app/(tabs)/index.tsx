@@ -10,6 +10,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { WorkoutActionBanner } from '@/components/WorkoutActionBanner';
 import { WorkoutCard } from '@/components/WorkoutCard';
 import { useWorkoutsStore } from '@/stores/useWorkoutsStore';
@@ -114,6 +115,8 @@ export default function HomeScreen() {
         <View style={[styles.habitsContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {activeHabits.map((habit, index) => {
             const isChecked = habit.last_checked === currentDate;
+            const streak = habit.streak_count ?? 0;
+
             return (
               <Pressable
                 key={habit.id}
@@ -122,18 +125,47 @@ export default function HomeScreen() {
                   index < activeHabits.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: 1 },
                 ]}
                 onPress={() => toggleCheckHabit(habit.id)}>
-                <View style={[styles.checkbox, isChecked && { backgroundColor: colors.accent, borderColor: colors.accent }]}>
-                  {isChecked && <Text style={styles.checkmark}>✓</Text>}
+                <View
+                  style={[
+                    styles.checkbox,
+                    { borderColor: isChecked ? colors.accent : colors.border },
+                    isChecked && { backgroundColor: colors.accent },
+                  ]}>
+                  {isChecked && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
                 </View>
                 <View style={styles.habitInfo}>
-                  <Text style={[styles.habitName, { color: colors.text }, isChecked && styles.habitCompletedText]}>
+                  <Text
+                    style={[
+                      styles.habitName,
+                      { color: colors.text },
+                      isChecked && styles.habitCompletedText,
+                    ]}
+                    numberOfLines={1}>
                     {habit.name}
                   </Text>
-                  {habit.reminder_time && (
-                    <Text style={[styles.habitTime, { color: colors.textSecondary }]}>
-                      ⏰ Reminder: {habit.reminder_time}
-                    </Text>
-                  )}
+                  <View style={styles.metaRow}>
+                    {habit.reminder_time && (
+                      <View style={[styles.timeBadge, { backgroundColor: colors.backgroundElement }]}>
+                        <Ionicons name="alarm-outline" size={12} color={colors.textSecondary} />
+                        <Text style={[styles.metaText, { color: colors.text }]}>
+                          {habit.reminder_time}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={[styles.frequencyBadge, { backgroundColor: colors.primarySubtle }]}>
+                      <Text style={[styles.frequencyText, { color: colors.primary }]}>
+                        {habit.frequency === 'weekdays' ? 'Weekdays' : habit.frequency === 'weekly' ? 'Weekly' : 'Daily'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Streak counter on the right edge */}
+                <View style={styles.streakContainer}>
+                  <Ionicons name="flame" size={20} color={colors.primary} />
+                  <Text style={[styles.streakCount, { color: scheme === 'light' ? colors.text : '#FFFFFF' }]}>
+                    {streak}
+                  </Text>
                 </View>
               </Pressable>
             );
@@ -240,15 +272,9 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#94A3B8',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.three,
-  },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
   },
   habitInfo: {
     flex: 1,
@@ -261,9 +287,43 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     opacity: 0.6,
   },
-  habitTime: {
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 5,
+  },
+  timeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  metaText: {
     fontSize: 12,
-    marginTop: 2,
+    fontWeight: '600',
+  },
+  frequencyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  frequencyText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: Spacing.two,
+    paddingRight: Spacing.one,
+  },
+  streakCount: {
+    fontSize: 16,
+    fontWeight: '800',
   },
   emptyCard: {
     borderRadius: 14,

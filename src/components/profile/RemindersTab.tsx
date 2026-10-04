@@ -158,6 +158,13 @@ export function RemindersTab({
                         {h.frequency === 'weekdays' ? 'Weekdays' : h.frequency === 'weekly' ? 'Weekly' : 'Daily'}
                       </Text>
                     </View>
+                    {/* Streak Badge */}
+                    <View style={[styles.streakBadge, { backgroundColor: colors.primarySubtle }]}>
+                      <Ionicons name="flame" size={12} color={colors.primary} />
+                      <Text style={[styles.streakText, { color: colors.primary }]}>
+                        {h.streak_count ?? 0}
+                      </Text>
+                    </View>
                   </View>
                 </View>
 
@@ -363,6 +370,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   frequencyText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  streakText: {
     fontSize: 11,
     fontWeight: '700',
   },
