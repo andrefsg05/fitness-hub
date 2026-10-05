@@ -281,7 +281,11 @@ export class WorkoutRepository {
   }
 
   // 2. Managing exercises and sets inside a workout
-  async addExerciseToWorkout(workoutId: string, exerciseId: string): Promise<WorkoutExercise> {
+  async addExerciseToWorkout(
+    workoutId: string,
+    exerciseId: string,
+    initialSet?: { weight: number; reps: number }
+  ): Promise<WorkoutExercise> {
     const id = `we-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
 
     // Find current max order index
@@ -299,8 +303,8 @@ export class WorkoutRepository {
       nextOrder
     );
 
-    // Auto-create set 1 with 0kg x 0 reps as starting template
-    await this.addSet(id, 1, 0, 0);
+    // Auto-create set 1 with initial values (e.g. active PR) or 0kg x 0 reps as starting template
+    await this.addSet(id, 1, initialSet?.weight ?? 0, initialSet?.reps ?? 0);
 
     return {
       id,

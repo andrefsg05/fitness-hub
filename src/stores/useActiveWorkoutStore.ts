@@ -139,7 +139,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
     if (!activeWorkout) return;
     try {
       const { workoutRepo, prRepo } = await getRepos();
-      await workoutRepo.addExerciseToWorkout(activeWorkout.id, exerciseId);
+      const activePR = await prRepo.getActivePR(exerciseId);
+      const initialSet = activePR ? { weight: activePR.weight, reps: activePR.reps } : undefined;
+      await workoutRepo.addExerciseToWorkout(activeWorkout.id, exerciseId, initialSet);
       await refreshActiveWorkout(workoutRepo, prRepo, set);
     } catch (err) {
       console.error('Error adding exercise in store:', err);
