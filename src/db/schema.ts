@@ -112,7 +112,19 @@ CREATE TABLE IF NOT EXISTS exercise_prs (
   FOREIGN KEY (workout_set_id) REFERENCES workout_sets(id) ON DELETE CASCADE
 );
 
--- 12. App Settings
+-- 12. Exercise stagnation alerts
+CREATE TABLE IF NOT EXISTS exercise_stagnation_states (
+  exercise_id TEXT PRIMARY KEY,
+  non_pr_workout_count INTEGER NOT NULL DEFAULT 0,
+  next_alert_at INTEGER NOT NULL DEFAULT 3,
+  alert_mode TEXT NOT NULL DEFAULT 'threshold',
+  last_counted_workout_id TEXT,
+  last_action_workout_id TEXT,
+  FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE,
+  CHECK (alert_mode IN ('threshold', 'persistent'))
+);
+
+-- 13. App Settings
 CREATE TABLE IF NOT EXISTS app_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -128,5 +140,5 @@ CREATE INDEX IF NOT EXISTS idx_bodyweight_logs_date ON bodyweight_logs(date DESC
 CREATE UNIQUE INDEX IF NOT EXISTS idx_active_pr_per_exercise ON exercise_prs(exercise_id) WHERE is_active = 1;
 CREATE INDEX IF NOT EXISTS idx_exercise_prs_history ON exercise_prs(exercise_id, achieved_at DESC);
 CREATE INDEX IF NOT EXISTS idx_exercise_prs_set ON exercise_prs(workout_set_id);
+CREATE INDEX IF NOT EXISTS idx_exercise_stagnation_last_workout ON exercise_stagnation_states(last_counted_workout_id);
 `;
-

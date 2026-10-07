@@ -35,6 +35,13 @@ export async function initializeDatabase(db: SQLite.SQLiteDatabase): Promise<voi
   } catch {
     // Column already exists
   }
+  try {
+    await db.execAsync(
+      'ALTER TABLE exercise_stagnation_states ADD COLUMN next_alert_at INTEGER NOT NULL DEFAULT 3;'
+    );
+  } catch {
+    // Column already exists, or the table has just been created with this column
+  }
 
   // Run seed data
   await seedDatabase(db);

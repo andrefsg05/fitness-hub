@@ -3,13 +3,18 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
 import { buildWorkoutCompletionInsights } from '@/services/workoutCompletionService';
 import { useUserStore } from '@/stores/useUserStore';
-import { WorkoutCompletionInsights, WorkoutWithDetails } from '@/types';
+import {
+  ExerciseStagnationAlert,
+  WorkoutCompletionInsights,
+  WorkoutWithDetails,
+} from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
+  Alert,
   Animated,
   Pressable,
   StyleSheet,
@@ -23,10 +28,16 @@ function RewardHeader({
   insights,
   workoutTypeName,
   userName,
+  handlingAlert,
+  onIgnoreStagnationAlert,
+  onEnablePersistentStagnationAlerts,
 }: {
   insights: WorkoutCompletionInsights;
   workoutTypeName: string;
   userName?: string;
+  handlingAlert: { exerciseId: string; action: 'ignore' | 'persistent' } | null;
+  onIgnoreStagnationAlert: (alert: ExerciseStagnationAlert) => void;
+  onEnablePersistentStagnationAlerts: (alert: ExerciseStagnationAlert) => void;
 }) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
@@ -156,6 +167,69 @@ function RewardHeader({
         </View>
       ) : null}
 
+      {insights.stagnationAlerts.map((alert) => {
+        const isHandling = handlingAlert?.exerciseId === alert.exercise_id;
+        const isIgnoring = isHandling && handlingAlert?.action === 'ignore';
+        const isEnablingPersistent = isHandling && handlingAlert?.action === 'persistent';
+        const isPersistent = alert.alert_mode === 'persistent';
+
+        return (
+          <View
+            key={alert.exercise_id}
+            style={[styles.stagnationCard, { backgroundColor: colors.warningSubtle, borderColor: colors.warning }]}
+            accessibilityLiveRegion="polite">
+            <View style={styles.achievementHeading}>
+              <Ionicons accessible={false} name="alert-circle-outline" size={22} color={colors.warning} />
+              <View style={styles.achievementHeadingText}>
+                <Text style={[styles.achievementTitle, { color: colors.text }]}>{alert.exercise_name}</Text>
+                <Text style={[styles.achievementLabel, { color: colors.textSecondary }]}>PROGRESS ALERT</Text>
+              </View>
+            </View>
+
+            <Text style={[styles.stagnationMessage, { color: colors.textSecondary }]}>
+              {isPersistent
+                ? `You still have not beaten your ${alert.pr_weight.toLocaleString()} kg × ${alert.pr_reps} PR. Give this exercise extra attention next time.`
+                : `No new PR in ${alert.non_pr_workout_count} workouts. Your current PR is ${alert.pr_weight.toLocaleString()} kg × ${alert.pr_reps}. Give this exercise extra attention next time.`}
+            </Text>
+
+            <View style={styles.stagnationActions}>
+              <Pressable
+                disabled={isHandling}
+                onPress={() => onIgnoreStagnationAlert(alert)}
+                style={({ pressed }) => [
+                  styles.stagnationSecondaryButton,
+                  { borderColor: colors.primary, opacity: pressed || isHandling ? 0.7 : 1 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Ignore ${alert.exercise_name} progress alert`}
+                accessibilityHint="Hides this alert until three more workouts without a new personal record">
+                {isIgnoring ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Text style={[styles.stagnationSecondaryButtonText, { color: colors.primary }]}>Ignore</Text>
+                )}
+              </Pressable>
+              <Pressable
+                disabled={isHandling}
+                onPress={() => onEnablePersistentStagnationAlerts(alert)}
+                style={({ pressed }) => [
+                  styles.stagnationPrimaryButton,
+                  { backgroundColor: colors.primary, opacity: pressed || isHandling ? 0.82 : 1 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Keep reminding me about ${alert.exercise_name}`}
+                accessibilityHint="Shows this alert after every workout without a new personal record until you beat it">
+                {isEnablingPersistent ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.stagnationPrimaryButtonText}>Keep reminding me</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        );
+      })}
+
       <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
     </Animated.View>
   );
@@ -166,18 +240,22 @@ export default function WorkoutSummaryScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-  const { workoutRepo, exercisePrRepo, isReady } = useDatabase();
+  const { workoutRepo, exercisePrRepo, exerciseStagnationRepo, isReady } = useDatabase();
   const user = useUserStore((state) => state.user);
   const [workout, setWorkout] = useState<WorkoutWithDetails | null>(null);
   const [insights, setInsights] = useState<WorkoutCompletionInsights | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [handlingAlert, setHandlingAlert] = useState<{
+    exerciseId: string;
+    action: 'ignore' | 'persistent';
+  } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadSummary() {
-      if (!workoutRepo || !exercisePrRepo || !isReady || !id) return;
+      if (!workoutRepo || !exercisePrRepo || !exerciseStagnationRepo || !isReady || !id) return;
 
       try {
         setIsLoading(true);
@@ -188,17 +266,20 @@ export default function WorkoutSummaryScreen() {
           throw new Error('Completed workout not found');
         }
 
-        const [previousWorkout, workoutPrs] = await Promise.all([
+        const [previousWorkout, workoutPrs, stagnationAlerts] = await Promise.all([
           workoutRepo.getLastCompletedWorkoutByType(
             completedWorkout.workout_type_id,
             completedWorkout.id
           ),
           exercisePrRepo.getPRsForWorkout(completedWorkout.id),
+          exerciseStagnationRepo.getAlertsForWorkout(completedWorkout.id),
         ]);
 
         if (!isMounted) return;
         setWorkout(completedWorkout);
-        setInsights(buildWorkoutCompletionInsights(completedWorkout, previousWorkout, workoutPrs));
+        setInsights(
+          buildWorkoutCompletionInsights(completedWorkout, previousWorkout, workoutPrs, stagnationAlerts)
+        );
       } catch (error) {
         console.error('Error loading workout completion summary:', error);
         if (isMounted) setHasError(true);
@@ -212,7 +293,46 @@ export default function WorkoutSummaryScreen() {
     return () => {
       isMounted = false;
     };
-  }, [exercisePrRepo, id, isReady, workoutRepo]);
+  }, [exercisePrRepo, exerciseStagnationRepo, id, isReady, workoutRepo]);
+
+  const dismissStagnationAlert = (exerciseId: string) => {
+    setInsights((current) => current
+      ? {
+          ...current,
+          stagnationAlerts: current.stagnationAlerts.filter((alert) => alert.exercise_id !== exerciseId),
+        }
+      : current);
+  };
+
+  const handleIgnoreStagnationAlert = async (alert: ExerciseStagnationAlert) => {
+    if (!exerciseStagnationRepo || !id) return;
+
+    try {
+      setHandlingAlert({ exerciseId: alert.exercise_id, action: 'ignore' });
+      await exerciseStagnationRepo.ignoreAlert(alert.exercise_id, id);
+      dismissStagnationAlert(alert.exercise_id);
+    } catch (error) {
+      console.error('Error ignoring exercise stagnation alert:', error);
+      Alert.alert('Unable to update alert', 'Please try again.');
+    } finally {
+      setHandlingAlert(null);
+    }
+  };
+
+  const handleEnablePersistentStagnationAlerts = async (alert: ExerciseStagnationAlert) => {
+    if (!exerciseStagnationRepo || !id) return;
+
+    try {
+      setHandlingAlert({ exerciseId: alert.exercise_id, action: 'persistent' });
+      await exerciseStagnationRepo.enablePersistentAlerts(alert.exercise_id, id);
+      dismissStagnationAlert(alert.exercise_id);
+    } catch (error) {
+      console.error('Error enabling persistent exercise stagnation alerts:', error);
+      Alert.alert('Unable to update alert', 'Please try again.');
+    } finally {
+      setHandlingAlert(null);
+    }
+  };
 
   const handleDone = () => router.replace('/');
 
@@ -258,6 +378,9 @@ export default function WorkoutSummaryScreen() {
             insights={insights}
             workoutTypeName={workout.workout_type_name}
             userName={firstName}
+            handlingAlert={handlingAlert}
+            onIgnoreStagnationAlert={handleIgnoreStagnationAlert}
+            onEnablePersistentStagnationAlerts={handleEnablePersistentStagnationAlerts}
           />
         }
       />
@@ -363,6 +486,50 @@ const styles = StyleSheet.create({
   achievementHeadingText: {
     flex: 1,
     marginLeft: Spacing.three,
+  },
+  stagnationCard: {
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: Spacing.three,
+    marginBottom: Spacing.three,
+  },
+  stagnationMessage: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: Spacing.two,
+  },
+  stagnationActions: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    marginTop: Spacing.three,
+  },
+  stagnationSecondaryButton: {
+    flex: 1,
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
+  },
+  stagnationSecondaryButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  stagnationPrimaryButton: {
+    flex: 1.4,
+    minHeight: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
+  },
+  stagnationPrimaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   achievementTitle: {
     fontSize: 16,

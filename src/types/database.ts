@@ -94,3 +94,13 @@ export interface ExercisePR {
   achieved_at: string;
 }
 
+export type ExerciseStagnationAlertMode = 'threshold' | 'persistent';
+
+export interface ExerciseStagnationState {
+  exercise_id: string;
+  non_pr_workout_count: number;
+  next_alert_at: number;
+  alert_mode: ExerciseStagnationAlertMode;
+  last_counted_workout_id: string | null;
+  last_action_workout_id: string | null;
+}

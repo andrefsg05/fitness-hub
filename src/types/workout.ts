@@ -1,4 +1,4 @@
-import { Workout, WorkoutExercise, WorkoutSet } from './database';
+import { ExerciseStagnationAlertMode, Workout, WorkoutExercise, WorkoutSet } from './database';
 
 export interface WorkoutSetInput {
   set_number: number;
@@ -50,8 +50,18 @@ export interface WorkoutPrAchievement {
   achieved_at: string;
 }
 
+export interface ExerciseStagnationAlert {
+  exercise_id: string;
+  exercise_name: string;
+  non_pr_workout_count: number;
+  alert_mode: ExerciseStagnationAlertMode;
+  pr_weight: number;
+  pr_reps: number;
+}
+
 export interface WorkoutCompletionInsights {
   prs: WorkoutPrAchievement[];
+  stagnationAlerts: ExerciseStagnationAlert[];
   previousVolume: number | null;
   volumeDelta: number | null;
   volumeDeltaPercentage: number | null;

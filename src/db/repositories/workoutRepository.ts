@@ -1,4 +1,5 @@
 import { findBestSet, isBetterSet } from '@/services/prService';
+import { ExerciseStagnationRepository } from '@/db/repositories/exerciseStagnationRepository';
 import {
   ExercisePR,
   Workout,
@@ -54,6 +55,7 @@ export class WorkoutRepository {
 
   async finishWorkout(workoutId: string, notes: string | null = null): Promise<void> {
     await this.db.withTransactionAsync(async () => {
+      const stagnationRepo = new ExerciseStagnationRepository(this.db);
       await this.db.runAsync(
         "UPDATE workouts SET status = 'completed', notes = ? WHERE id = ?",
         notes,
@@ -108,6 +110,8 @@ export class WorkoutRepository {
             bestSet.reps
           );
         }
+
+        await stagnationRepo.recordExerciseResult(exRow.exercise_id, workoutId, isNewRecord);
       }
     });
   }

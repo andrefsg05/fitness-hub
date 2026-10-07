@@ -4,6 +4,7 @@ import { getDatabase, initializeDatabase } from '@/db/database';
 import {
   ExerciseRepository,
   ExercisePrRepository,
+  ExerciseStagnationRepository,
   HabitRepository,
   UserRepository,
   WorkoutRepository,
@@ -20,6 +21,7 @@ interface DatabaseContextValue {
   exerciseRepo: ExerciseRepository | null;
   workoutRepo: WorkoutRepository | null;
   exercisePrRepo: ExercisePrRepository | null;
+  exerciseStagnationRepo: ExerciseStagnationRepository | null;
 }
 
 const DatabaseContext = createContext<DatabaseContextValue>({
@@ -32,6 +34,7 @@ const DatabaseContext = createContext<DatabaseContextValue>({
   exerciseRepo: null,
   workoutRepo: null,
   exercisePrRepo: null,
+  exerciseStagnationRepo: null,
 });
 
 export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -45,6 +48,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     exerciseRepo: null,
     workoutRepo: null,
     exercisePrRepo: null,
+    exerciseStagnationRepo: null,
   });
 
   useEffect(() => {
@@ -64,6 +68,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             exerciseRepo: new ExerciseRepository(database),
             workoutRepo: new WorkoutRepository(database),
             exercisePrRepo: new ExercisePrRepository(database),
+            exerciseStagnationRepo: new ExerciseStagnationRepository(database),
           });
           setIsReady(true);
         }
