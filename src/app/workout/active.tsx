@@ -5,7 +5,7 @@ import { useDatabase } from '@/context/DatabaseContext';
 import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
 import { Exercise, WorkoutType, WorkoutWithDetails } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -59,6 +59,7 @@ export default function ActiveWorkoutScreen() {
   const [showCreateExerciseModal, setShowCreateExerciseModal] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState('');
   const [newExerciseCategory, setNewExerciseCategory] = useState('');
+  const [isFinishing, setIsFinishing] = useState(false);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -146,8 +147,20 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleFinish = async () => {
-    await finishWorkout(notes.trim() || null);
-    router.replace('/');
+    if (isFinishing) return;
+
+    try {
+      setIsFinishing(true);
+      const workoutId = await finishWorkout(notes.trim() || null);
+      router.replace(`/workout/summary/${workoutId}` as Href);
+    } catch {
+      Alert.alert(
+        'Unable to Finish Workout',
+        'Your workout is still available. Please try again.'
+      );
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   const handleDiscard = () => {
@@ -503,9 +516,25 @@ export default function ActiveWorkoutScreen() {
 
       {/* Finish Workout CTA */}
       <Pressable
-        style={[styles.finishBtn, { backgroundColor: colors.accent }]}
-        onPress={handleFinish}>
-        <Text style={styles.finishBtnText}>Finish Workout</Text>
+        style={({ pressed }) => [
+          styles.finishBtn,
+          {
+            backgroundColor: colors.accent,
+            opacity: pressed || isFinishing ? 0.75 : 1,
+          },
+        ]}
+        onPress={handleFinish}
+        disabled={isFinishing}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isFinishing }}>
+        {isFinishing ? (
+          <>
+            <ActivityIndicator size="small" color={colors.onAccent} />
+            <Text style={[styles.finishBtnText, { color: colors.onAccent }]}>Finishing…</Text>
+          </>
+        ) : (
+          <Text style={[styles.finishBtnText, { color: colors.onAccent }]}>Finish Workout</Text>
+        )}
       </Pressable>
 
       {/* Modal: Select Exercise */}
@@ -910,13 +939,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   finishBtn: {
+    minHeight: 48,
+    flexDirection: 'row',
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
     marginTop: Spacing.four,
   },
   finishBtnText: {
-    color: '#FFF',
     fontSize: 16,
     fontWeight: '800',
   },

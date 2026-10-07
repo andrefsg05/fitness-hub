@@ -39,3 +39,22 @@ export interface WorkoutSummary {
   notes: string | null;
   created_at: string;
 }
+
+export interface WorkoutPrAchievement {
+  id: string;
+  exercise_id: string;
+  exercise_name: string;
+  workout_set_id: string;
+  weight: number;
+  reps: number;
+  achieved_at: string;
+}
+
+export interface WorkoutCompletionInsights {
+  prs: WorkoutPrAchievement[];
+  previousVolume: number | null;
+  volumeDelta: number | null;
+  volumeDeltaPercentage: number | null;
+  hasVolumeImprovement: boolean;
+  isFirstWorkoutOfType: boolean;
+}

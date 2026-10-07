@@ -118,6 +118,14 @@ function RootApp() {
             }}
           />
           <Stack.Screen
+            name="workout/summary/[id]"
+            options={{
+              presentation: 'modal',
+              headerShown: false,
+              animation: 'fade',
+            }}
+          />
+          <Stack.Screen
             name="statistics/prs"
             options={{
               presentation: 'modal',

@@ -1,4 +1,4 @@
-import { ExercisePR } from '@/types';
+import { ExercisePR, WorkoutPrAchievement } from '@/types';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export class ExercisePrRepository {
@@ -38,6 +38,26 @@ export class ExercisePrRepository {
        WHERE exercise_id = ? 
        ORDER BY achieved_at DESC`,
       exerciseId
+    );
+  }
+
+  async getPRsForWorkout(workoutId: string): Promise<WorkoutPrAchievement[]> {
+    return await this.db.getAllAsync<WorkoutPrAchievement>(
+      `SELECT
+         ep.id,
+         ep.exercise_id,
+         e.name AS exercise_name,
+         ep.workout_set_id,
+         ep.weight,
+         ep.reps,
+         ep.achieved_at
+       FROM exercise_prs ep
+       JOIN workout_sets ws ON ws.id = ep.workout_set_id
+       JOIN workout_exercises we ON we.id = ws.workout_exercise_id
+       JOIN exercises e ON e.id = ep.exercise_id
+       WHERE we.workout_id = ?
+       ORDER BY ep.achieved_at ASC`,
+      workoutId
     );
   }
 

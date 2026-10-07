@@ -3,6 +3,7 @@ import { ExercisePrRepository } from '@/db/repositories/exercisePrRepository';
 import { WorkoutRepository } from '@/db/repositories/workoutRepository';
 import { annotateSetsWithPRs } from '@/services/prService';
 import { useWorkoutsStore } from '@/stores/useWorkoutsStore';
+import { useUserStore } from '@/stores/useUserStore';
 import { WorkoutWithDetails } from '@/types';
 import { create } from 'zustand';
 
@@ -35,7 +36,7 @@ interface ActiveWorkoutState {
     reps: number
   ) => Promise<void>;
   deleteDropSet: (dropSetId: string) => Promise<void>;
-  finishWorkout: (notes?: string | null) => Promise<void>;
+  finishWorkout: (notes?: string | null) => Promise<string>;
   discardWorkout: () => Promise<void>;
 }
 
@@ -220,14 +221,23 @@ export const useActiveWorkoutStore = create<ActiveWorkoutState>((set, get) => ({
 
   finishWorkout: async (notes: string | null = null) => {
     const { activeWorkout } = get();
-    if (!activeWorkout) return;
+    if (!activeWorkout) {
+      throw new Error('No active workout to finish');
+    }
     try {
       const { workoutRepo } = await getRepos();
       await workoutRepo.finishWorkout(activeWorkout.id, notes);
       set({ activeWorkout: null });
-      useWorkoutsStore.getState().fetchWorkouts();
+      void Promise.all([
+        useWorkoutsStore.getState().fetchWorkouts(),
+        useUserStore.getState().fetchProfile(),
+      ]).catch((err) => {
+        console.error('Error refreshing workout data after completion:', err);
+      });
+      return activeWorkout.id;
     } catch (err) {
       console.error('Error finishing workout in store:', err);
+      throw err;
     }
   },
 
