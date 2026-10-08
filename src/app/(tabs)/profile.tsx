@@ -50,6 +50,7 @@ export default function ProfileScreen() {
   const activeTabRef = useRef<ProfileTabKey>('progress');
 
   const [refreshing, setRefreshing] = useState(false);
+  const [alertsRefreshKey, setAlertsRefreshKey] = useState(0);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function ProfileScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([fetchProfile(), fetchHabits()]);
+    setAlertsRefreshKey((current) => current + 1);
     setRefreshing(false);
   };
 
@@ -117,6 +119,7 @@ export default function ProfileScreen() {
             latestWeight={latestWeight}
             weightHistory={weightHistory}
             onLogWeight={logWeight}
+            alertsRefreshKey={alertsRefreshKey}
           />
         )}
 

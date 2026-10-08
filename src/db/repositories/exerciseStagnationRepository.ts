@@ -74,14 +74,32 @@ export class ExerciseStagnationRepository {
     );
   }
 
-  async ignoreAlert(exerciseId: string, workoutId: string): Promise<void> {
+  async getActiveAlerts(): Promise<ExerciseStagnationAlert[]> {
+    return await this.db.getAllAsync<ExerciseStagnationAlert>(
+      `SELECT
+         state.exercise_id,
+         e.name AS exercise_name,
+         state.non_pr_workout_count,
+         state.alert_mode,
+         pr.weight AS pr_weight,
+         pr.reps AS pr_reps
+       FROM exercise_stagnation_states state
+       JOIN exercises e ON e.id = state.exercise_id
+       JOIN exercise_prs pr ON pr.exercise_id = state.exercise_id AND pr.is_active = 1
+       WHERE state.non_pr_workout_count >= state.next_alert_at
+          OR state.alert_mode = 'persistent'
+       ORDER BY e.name ASC`
+    );
+  }
+
+  async ignoreAlert(exerciseId: string, actionId?: string): Promise<void> {
     await this.db.runAsync(
       `UPDATE exercise_stagnation_states
        SET next_alert_at = non_pr_workout_count + 3,
            alert_mode = 'threshold',
            last_action_workout_id = ?
        WHERE exercise_id = ?`,
-      workoutId,
+      actionId ?? `alert-action-${Date.now()}`,
       exerciseId
     );
   }

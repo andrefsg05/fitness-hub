@@ -1,8 +1,9 @@
 import { Colors, Spacing } from '@/constants/theme';
+import { useDatabase } from '@/context/DatabaseContext';
 import { BodyweightLog, User } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -18,6 +19,7 @@ interface ProgressTabProps {
   latestWeight: BodyweightLog | null;
   weightHistory: BodyweightLog[];
   onLogWeight: (weight: number) => Promise<void>;
+  alertsRefreshKey: number;
 }
 
 export function ProgressTab({
@@ -25,14 +27,38 @@ export function ProgressTab({
   latestWeight,
   weightHistory,
   onLogWeight,
+  alertsRefreshKey,
 }: ProgressTabProps) {
   const router = useRouter();
+  const { exerciseStagnationRepo, isReady } = useDatabase();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
   const [showLogModal, setShowLogModal] = useState(false);
   const [weightInput, setWeightInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeAlertsCount, setActiveAlertsCount] = useState(0);
+
+  const loadActiveAlertsCount = useCallback(async () => {
+    if (!exerciseStagnationRepo || !isReady) return;
+
+    try {
+      const alerts = await exerciseStagnationRepo.getActiveAlerts();
+      setActiveAlertsCount(alerts.length);
+    } catch (error) {
+      console.error('Error loading active progress alerts:', error);
+    }
+  }, [exerciseStagnationRepo, isReady]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadActiveAlertsCount();
+    }, [loadActiveAlertsCount])
+  );
+
+  useEffect(() => {
+    if (alertsRefreshKey > 0) loadActiveAlertsCount();
+  }, [alertsRefreshKey, loadActiveAlertsCount]);
 
   const handleSaveWeight = async () => {
     const parsed = parseFloat(weightInput);
@@ -57,6 +83,30 @@ export function ProgressTab({
 
   return (
     <View style={styles.container}>
+      {activeAlertsCount > 0 ? (
+        <Pressable
+          style={({ pressed }) => [
+            styles.alertSummary,
+            { borderBottomColor: colors.border, opacity: pressed ? 0.72 : 1 },
+          ]}
+          onPress={() => router.push('/profile/progress-alerts')}
+          accessibilityRole="button"
+          accessibilityLabel={`View ${activeAlertsCount} active progress ${activeAlertsCount === 1 ? 'alert' : 'alerts'}`}
+          accessibilityHint="Opens the list of active progress alerts">
+          <View style={styles.alertSummaryContent}>
+            <View style={[styles.alertIcon, { backgroundColor: colors.warningSubtle }]}>
+              <Ionicons accessible={false} name="alert-circle-outline" size={23} color={colors.warning} />
+            </View>
+            <View style={styles.alertSummaryText}>
+              <Text style={[styles.alertSummaryTitle, { color: colors.text }]}>
+                {activeAlertsCount} {activeAlertsCount === 1 ? 'Progress Alert' : 'Progress Alerts'}
+              </Text>
+              <Text style={[styles.alertSummarySubtitle, { color: colors.textSecondary }]}>Tap to view all</Text>
+            </View>
+          </View>
+        </Pressable>
+      ) : null}
+
       {/* 1. Bodyweight Card (Compact) */}
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardHeaderRow}>
@@ -210,6 +260,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 6,
     elevation: 1,
+  },
+  alertSummary: {
+    minHeight: 72,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    paddingBottom: Spacing.three,
+  },
+  alertSummaryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  alertIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.two,
+  },
+  alertSummaryText: {
+    flexShrink: 1,
+  },
+  alertSummaryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  alertSummarySubtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
   cardHeaderRow: {
     flexDirection: 'row',

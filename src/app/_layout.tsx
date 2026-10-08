@@ -130,7 +130,7 @@ function RootApp() {
             options={{
               presentation: 'modal',
               headerShown: false,
-              animation: 'slide_from_bottom',
+              animation: 'slide_from_right',
             }}
           />
           <Stack.Screen
@@ -138,7 +138,14 @@ function RootApp() {
             options={{
               presentation: 'modal',
               headerShown: false,
-              animation: 'slide_from_bottom',
+              animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="profile/progress-alerts"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
             }}
           />
         </Stack>
