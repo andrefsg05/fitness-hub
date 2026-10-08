@@ -1,5 +1,6 @@
 import { Colors, Spacing } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { BodyweightLog, User } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -31,6 +32,8 @@ export function ProgressTab({
 }: ProgressTabProps) {
   const router = useRouter();
   const { exerciseStagnationRepo, isReady } = useDatabase();
+  const prProgressAlertsEnabled = useSettingsStore((state) => state.prProgressAlertsEnabled);
+  const settingsLoaded = useSettingsStore((state) => state.isLoaded);
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
@@ -40,7 +43,12 @@ export function ProgressTab({
   const [activeAlertsCount, setActiveAlertsCount] = useState(0);
 
   const loadActiveAlertsCount = useCallback(async () => {
-    if (!exerciseStagnationRepo || !isReady) return;
+    if (!exerciseStagnationRepo || !isReady || !settingsLoaded) return;
+
+    if (!prProgressAlertsEnabled) {
+      setActiveAlertsCount(0);
+      return;
+    }
 
     try {
       const alerts = await exerciseStagnationRepo.getActiveAlerts();
@@ -48,7 +56,7 @@ export function ProgressTab({
     } catch (error) {
       console.error('Error loading active progress alerts:', error);
     }
-  }, [exerciseStagnationRepo, isReady]);
+  }, [exerciseStagnationRepo, isReady, prProgressAlertsEnabled, settingsLoaded]);
 
   useFocusEffect(
     useCallback(() => {

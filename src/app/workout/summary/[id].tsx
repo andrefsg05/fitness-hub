@@ -2,6 +2,7 @@ import { WorkoutSummaryContent } from '@/components/WorkoutSummaryContent';
 import { Colors, Spacing } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
 import { buildWorkoutCompletionInsights } from '@/services/workoutCompletionService';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserStore } from '@/stores/useUserStore';
 import {
   ExerciseStagnationAlert,
@@ -242,6 +243,8 @@ export default function WorkoutSummaryScreen() {
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const { workoutRepo, exercisePrRepo, exerciseStagnationRepo, isReady } = useDatabase();
   const user = useUserStore((state) => state.user);
+  const prProgressAlertsEnabled = useSettingsStore((state) => state.prProgressAlertsEnabled);
+  const settingsLoaded = useSettingsStore((state) => state.isLoaded);
   const [workout, setWorkout] = useState<WorkoutWithDetails | null>(null);
   const [insights, setInsights] = useState<WorkoutCompletionInsights | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -255,7 +258,14 @@ export default function WorkoutSummaryScreen() {
     let isMounted = true;
 
     async function loadSummary() {
-      if (!workoutRepo || !exercisePrRepo || !exerciseStagnationRepo || !isReady || !id) return;
+      if (
+        !workoutRepo ||
+        !exercisePrRepo ||
+        !exerciseStagnationRepo ||
+        !isReady ||
+        !settingsLoaded ||
+        !id
+      ) return;
 
       try {
         setIsLoading(true);
@@ -272,7 +282,9 @@ export default function WorkoutSummaryScreen() {
             completedWorkout.id
           ),
           exercisePrRepo.getPRsForWorkout(completedWorkout.id),
-          exerciseStagnationRepo.getAlertsForWorkout(completedWorkout.id),
+          prProgressAlertsEnabled
+            ? exerciseStagnationRepo.getAlertsForWorkout(completedWorkout.id)
+            : Promise.resolve<ExerciseStagnationAlert[]>([]),
         ]);
 
         if (!isMounted) return;
@@ -293,7 +305,15 @@ export default function WorkoutSummaryScreen() {
     return () => {
       isMounted = false;
     };
-  }, [exercisePrRepo, exerciseStagnationRepo, id, isReady, workoutRepo]);
+  }, [
+    exercisePrRepo,
+    exerciseStagnationRepo,
+    id,
+    isReady,
+    prProgressAlertsEnabled,
+    settingsLoaded,
+    workoutRepo,
+  ]);
 
   const dismissStagnationAlert = (exerciseId: string) => {
     setInsights((current) => current
@@ -397,7 +417,6 @@ export default function WorkoutSummaryScreen() {
           accessibilityRole="button"
           accessibilityLabel="Finish and return home">
           <Text style={[styles.doneButtonText, { color: colors.onAccent }]}>Done</Text>
-          <Ionicons name="arrow-forward" size={20} color={colors.onAccent} />
         </Pressable>
       </SafeAreaView>
     </View>

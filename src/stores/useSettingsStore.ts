@@ -15,11 +15,14 @@ export type ThemePreference = 'system' | 'light' | 'dark';
 interface SettingsState {
   themePreference: ThemePreference;
   notificationsEnabled: boolean;
+  prProgressAlertsEnabled: boolean;
+  isUpdatingPrProgressAlerts: boolean;
   isLoading: boolean;
   isLoaded: boolean;
   fetchSettings: () => Promise<void>;
   setThemePreference: (pref: ThemePreference) => Promise<void>;
   setNotificationsEnabled: (enabled: boolean) => Promise<boolean>;
+  setPrProgressAlertsEnabled: (enabled: boolean) => Promise<boolean>;
 }
 
 const getRepo = async () => {
@@ -30,6 +33,8 @@ const getRepo = async () => {
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   themePreference: 'system',
   notificationsEnabled: true,
+  prProgressAlertsEnabled: true,
+  isUpdatingPrProgressAlerts: false,
   isLoading: false,
   isLoaded: false,
 
@@ -39,6 +44,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const repo = await getRepo();
       const savedTheme = (await repo.getSetting('theme_preference', 'system')) as ThemePreference;
       const savedNotifications = (await repo.getSetting('notifications_enabled', 'true')) === 'true';
+      const savedPrProgressAlerts =
+        (await repo.getSetting('pr_progress_alerts_enabled', 'true')) === 'true';
 
       // Apply theme preference to React Native's Appearance API
       if (savedTheme === 'system') {
@@ -50,10 +57,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set({
         themePreference: savedTheme,
         notificationsEnabled: savedNotifications,
+        prProgressAlertsEnabled: savedPrProgressAlerts,
         isLoaded: true,
       });
     } catch (err) {
       console.error('Error fetching settings:', err);
+      set({ isLoaded: true });
     } finally {
       set({ isLoading: false });
     }
@@ -104,6 +113,26 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     } catch (err) {
       console.error('Error saving notification preference:', err);
       return false;
+    }
+  },
+
+  setPrProgressAlertsEnabled: async (enabled: boolean) => {
+    const previousValue = get().prProgressAlertsEnabled;
+
+    try {
+      set({
+        prProgressAlertsEnabled: enabled,
+        isUpdatingPrProgressAlerts: true,
+      });
+      const repo = await getRepo();
+      await repo.setSetting('pr_progress_alerts_enabled', enabled ? 'true' : 'false');
+      return true;
+    } catch (err) {
+      console.error('Error saving PR progress alerts preference:', err);
+      set({ prProgressAlertsEnabled: previousValue });
+      return false;
+    } finally {
+      set({ isUpdatingPrProgressAlerts: false });
     }
   },
 }));

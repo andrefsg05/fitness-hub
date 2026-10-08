@@ -42,8 +42,9 @@ function RootApp() {
     Aldrich_400Regular,
   });
 
-  const { user, isLoaded, fetchProfile } = useUserStore();
+  const { user, isLoaded: isUserLoaded, fetchProfile } = useUserStore();
   const fetchSettings = useSettingsStore((state) => state.fetchSettings);
+  const settingsLoaded = useSettingsStore((state) => state.isLoaded);
   const segments = useSegments();
   const router = useRouter();
 
@@ -59,7 +60,7 @@ function RootApp() {
   }, [isReady, fetchProfile, fetchSettings]);
 
   useEffect(() => {
-    if (!fontsLoaded || !isReady || !isLoaded) return;
+    if (!fontsLoaded || !isReady || !isUserLoaded || !settingsLoaded) return;
 
     const inOnboarding = segments[0] === 'onboarding';
 
@@ -68,7 +69,7 @@ function RootApp() {
     } else if (user && inOnboarding) {
       router.replace('/(tabs)');
     }
-  }, [fontsLoaded, isReady, isLoaded, user, segments, router]);
+  }, [fontsLoaded, isReady, isUserLoaded, settingsLoaded, user, segments, router]);
 
   if (error) {
     return (
@@ -79,7 +80,7 @@ function RootApp() {
     );
   }
 
-  if (!fontsLoaded || !isReady || !isLoaded) {
+  if (!fontsLoaded || !isReady || !isUserLoaded || !settingsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />

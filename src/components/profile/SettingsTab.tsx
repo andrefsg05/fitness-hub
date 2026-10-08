@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -18,9 +19,19 @@ export function SettingsTab() {
   const {
     themePreference,
     notificationsEnabled,
+    prProgressAlertsEnabled,
+    isUpdatingPrProgressAlerts,
     setThemePreference,
     setNotificationsEnabled,
+    setPrProgressAlertsEnabled,
   } = useSettingsStore();
+
+  const handlePrProgressAlertsChange = async (enabled: boolean) => {
+    const wasSaved = await setPrProgressAlertsEnabled(enabled);
+    if (!wasSaved) {
+      Alert.alert('Unable to update setting', 'Please try again.');
+    }
+  };
 
   const THEME_OPTIONS: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
@@ -103,7 +114,34 @@ export function SettingsTab() {
         </View>
       </View>
 
-      {/* 3. App & Storage Info */}
+      {/* 3. PR Progress Alerts Preference */}
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.settingRow}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.primarySubtle }]}>
+            <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.headerInfo}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>PR Progress Alerts</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+              Receive alerts when an exercise goes several workouts without a new PR
+            </Text>
+          </View>
+          <Switch
+            value={prProgressAlertsEnabled}
+            disabled={isUpdatingPrProgressAlerts}
+            onValueChange={handlePrProgressAlertsChange}
+            trackColor={{ false: colors.border, true: colors.accent }}
+            accessibilityLabel="PR progress alerts"
+            accessibilityHint="Controls alerts about exercises that have gone several workouts without a new personal record"
+            accessibilityState={{
+              checked: prProgressAlertsEnabled,
+              disabled: isUpdatingPrProgressAlerts,
+            }}
+          />
+        </View>
+      </View>
+
+      {/* 4. App & Storage Info */}
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.sectionHeader}>
           <View style={[styles.iconCircle, { backgroundColor: colors.backgroundElement }]}>

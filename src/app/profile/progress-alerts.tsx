@@ -1,5 +1,6 @@
 import { Colors, Spacing } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { ExerciseStagnationAlert } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -29,13 +30,22 @@ export default function ProgressAlertsScreen() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const { exerciseStagnationRepo, isReady } = useDatabase();
+  const prProgressAlertsEnabled = useSettingsStore((state) => state.prProgressAlertsEnabled);
+  const settingsLoaded = useSettingsStore((state) => state.isLoaded);
   const [alerts, setAlerts] = useState<ExerciseStagnationAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [ignoringExerciseId, setIgnoringExerciseId] = useState<string | null>(null);
 
   const loadAlerts = useCallback(async () => {
-    if (!exerciseStagnationRepo || !isReady) return;
+    if (!exerciseStagnationRepo || !isReady || !settingsLoaded) return;
+
+    if (!prProgressAlertsEnabled) {
+      setAlerts([]);
+      setHasError(false);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -47,7 +57,7 @@ export default function ProgressAlertsScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [exerciseStagnationRepo, isReady]);
+  }, [exerciseStagnationRepo, isReady, prProgressAlertsEnabled, settingsLoaded]);
 
   useFocusEffect(
     useCallback(() => {
@@ -97,7 +107,17 @@ export default function ProgressAlertsScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {isLoading ? (
+      {!prProgressAlertsEnabled ? (
+        <View style={styles.centeredState}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.backgroundElement }]}>
+            <Ionicons name="notifications-off-outline" size={28} color={colors.textSecondary} />
+          </View>
+          <Text style={[styles.stateTitle, { color: colors.text }]}>PR progress alerts are off</Text>
+          <Text style={[styles.stateSubtitle, { color: colors.textSecondary }]}>
+            You can enable them again in Profile Settings.
+          </Text>
+        </View>
+      ) : isLoading ? (
         <View style={styles.centeredState}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
