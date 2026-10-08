@@ -22,7 +22,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import { getTodayDateString } from '@/services/notificationService';
 
 export default function HomeScreen() {
-  const { setActiveTab } = useTabNavigationStore();
+  const { setActiveTab, setProfileTab } = useTabNavigationStore();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
 
@@ -100,7 +100,11 @@ export default function HomeScreen() {
       {/* Today's Habits & Reminders */}
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Reminders</Text>
-        <Pressable onPress={() => setActiveTab('profile')}>
+        <Pressable
+          onPress={() => {
+            setProfileTab('reminders');
+            setActiveTab('profile');
+          }}>
           <Text style={[styles.sectionLink, { color: colors.primary }]}>Manage</Text>
         </Pressable>
       </View>

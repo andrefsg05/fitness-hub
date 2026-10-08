@@ -1,12 +1,13 @@
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
 import { GoalsTab } from '@/components/profile/GoalsTab';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
-import { ProfileTabBar, ProfileTabKey } from '@/components/profile/ProfileTabBar';
+import { ProfileTabBar } from '@/components/profile/ProfileTabBar';
 import { ProgressTab } from '@/components/profile/ProgressTab';
 import { RemindersTab } from '@/components/profile/RemindersTab';
 import { SettingsTab } from '@/components/profile/SettingsTab';
 import { Colors, Spacing } from '@/constants/theme';
 import { useHabitsStore } from '@/stores/useHabitsStore';
+import { ProfileTabKey, useTabNavigationStore } from '@/stores/useTabNavigationStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -45,9 +46,9 @@ export default function ProfileScreen() {
 
   const { habits, addHabit, toggleActive, deleteHabit, fetchHabits } = useHabitsStore();
 
-  const [activeTab, setActiveTab] = useState<ProfileTabKey>('progress');
+  const { profileTab: activeTab, setProfileTab } = useTabNavigationStore();
   const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
-  const activeTabRef = useRef<ProfileTabKey>('progress');
+  const activeTabRef = useRef<ProfileTabKey>(activeTab);
 
   const [refreshing, setRefreshing] = useState(false);
   const [alertsRefreshKey, setAlertsRefreshKey] = useState(0);
@@ -73,7 +74,7 @@ export default function ProfileScreen() {
 
     setSlideDirection(direction);
     activeTabRef.current = newTab;
-    setActiveTab(newTab);
+    setProfileTab(newTab);
   };
 
   const enteringAnimation =
