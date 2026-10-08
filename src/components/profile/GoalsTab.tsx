@@ -64,8 +64,8 @@ export function GoalsTab({
 
   return (
     <View style={styles.container}>
-      {/* 1. Progress Banner & Action */}
-      <View style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* 1. Header & Action */}
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerTop}>
           <View>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Goals & Targets</Text>
@@ -242,15 +242,9 @@ const styles = StyleSheet.create({
   container: {
     gap: Spacing.three,
   },
-  headerCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: Spacing.three,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
+  header: {
+    borderBottomWidth: 1,
+    paddingBottom: Spacing.three,
   },
   headerTop: {
     flexDirection: 'row',
