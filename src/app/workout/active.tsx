@@ -1,12 +1,14 @@
 import { LastWorkoutDrawer } from '@/components/LastWorkoutDrawer';
 import { PrBadge } from '@/components/PrBadge';
+import { WorkoutProgressReminder } from '@/components/WorkoutProgressReminder';
 import { Colors, Spacing } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
 import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
-import { Exercise, WorkoutType, WorkoutWithDetails } from '@/types';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { Exercise, ExerciseStagnationAlert, WorkoutType, WorkoutWithDetails } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { Href, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -44,7 +46,8 @@ export default function ActiveWorkoutScreen() {
     discardWorkout,
   } = useActiveWorkoutStore();
 
-  const { workoutRepo, workoutTypeRepo, exerciseRepo } = useDatabase();
+  const { workoutRepo, workoutTypeRepo, exerciseRepo, exerciseStagnationRepo, isReady } = useDatabase();
+  const settingsLoaded = useSettingsStore((state) => state.isLoaded);
 
   const [workoutTypes, setWorkoutTypes] = useState<WorkoutType[]>([]);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
@@ -60,6 +63,13 @@ export default function ActiveWorkoutScreen() {
   const [newExerciseName, setNewExerciseName] = useState('');
   const [newExerciseCategory, setNewExerciseCategory] = useState('');
   const [isFinishing, setIsFinishing] = useState(false);
+  const [pendingWorkout, setPendingWorkout] = useState<{
+    type: WorkoutType;
+    alerts: ExerciseStagnationAlert[];
+  } | null>(null);
+  const [isPreparingWorkout, setIsPreparingWorkout] = useState(false);
+  const [startError, setStartError] = useState<'alerts' | 'session' | null>(null);
+  const preparingWorkoutRef = useRef(false);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -116,9 +126,50 @@ export default function ActiveWorkoutScreen() {
     setShowNewTypeModal(false);
   };
 
-  const handleStartWorkout = async () => {
-    if (!selectedWorkoutTypeId) return;
-    await startWorkout(selectedWorkoutTypeId);
+  const handleStartWorkout = async (skipReminders = false) => {
+    const type = pendingWorkout?.type ?? workoutTypes.find((item) => item.id === selectedWorkoutTypeId);
+    if (!type || !isReady || !settingsLoaded || preparingWorkoutRef.current) return;
+
+    preparingWorkoutRef.current = true;
+    setIsPreparingWorkout(true);
+    setStartError(null);
+
+    try {
+      const { prProgressAlertsEnabled } = useSettingsStore.getState();
+      if (!pendingWorkout && !skipReminders && prProgressAlertsEnabled) {
+        try {
+          if (!exerciseStagnationRepo) throw new Error('Progress alerts repository is unavailable');
+          const alerts = await exerciseStagnationRepo.getActiveAlerts(type.name);
+          if (alerts.length > 0) {
+            setPendingWorkout({ type, alerts });
+            return;
+          }
+        } catch (error) {
+          console.error('Error loading pre-workout progress alerts:', error);
+          setStartError('alerts');
+          return;
+        }
+      }
+
+      const workout = await startWorkout(type.id);
+      if (workout) {
+        setPendingWorkout(null);
+      } else {
+        setStartError('session');
+      }
+    } catch (error) {
+      console.error('Error starting workout session:', error);
+      setStartError('session');
+    } finally {
+      preparingWorkoutRef.current = false;
+      setIsPreparingWorkout(false);
+    }
+  };
+
+  const handleReminderBack = () => {
+    if (preparingWorkoutRef.current) return;
+    setPendingWorkout(null);
+    setStartError(null);
   };
 
   const handleAddExerciseToWorkout = async (exerciseId: string) => {
@@ -224,7 +275,11 @@ export default function ActiveWorkoutScreen() {
                     styles.typeCard,
                     { backgroundColor: isSelected ? colors.primarySubtle : colors.card, borderColor: isSelected ? colors.primary : colors.border },
                   ]}
-                  onPress={() => setSelectedWorkoutTypeId(type.id)}>
+                  disabled={isPreparingWorkout}
+                  onPress={() => {
+                    setSelectedWorkoutTypeId(type.id);
+                    setStartError(null);
+                  }}>
                   <Text style={[styles.typeName, { color: isSelected ? colors.primary : colors.text }]}>
                     {type.name}
                   </Text>
@@ -242,18 +297,56 @@ export default function ActiveWorkoutScreen() {
           </Text>
           <Pressable
             style={[styles.customRoutineButton, { borderColor: colors.border }]}
+            disabled={isPreparingWorkout}
             onPress={() => setShowNewTypeModal(true)}>
             <Text style={[styles.customRoutineButtonText, { color: colors.text }]}>+ New Custom Routine</Text>
           </Pressable>
         </ScrollView>
 
         <View style={{ paddingTop: Spacing.three, paddingBottom: Spacing.three }}>
+          {startError && (
+            <Text accessibilityRole="alert" style={{ color: colors.danger, fontSize: 14, lineHeight: 21, marginBottom: Spacing.two }}>
+              {startError === 'alerts'
+                ? 'Unable to load progress alerts. Try again or start without the reminder.'
+                : 'Unable to start your workout. Please try again.'}
+            </Text>
+          )}
           <Pressable
-            style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-            onPress={handleStartWorkout}>
-            <Text style={styles.primaryBtnText}>Begin Workout Session 🚀</Text>
+            style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary, opacity: pressed || isPreparingWorkout || !settingsLoaded || !isReady || !selectedWorkoutTypeId ? 0.7 : 1 }]}
+            disabled={isPreparingWorkout || !settingsLoaded || !isReady || !selectedWorkoutTypeId}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isPreparingWorkout || !settingsLoaded || !isReady || !selectedWorkoutTypeId, busy: isPreparingWorkout }}
+            onPress={() => handleStartWorkout()}>
+            {isPreparingWorkout ? <ActivityIndicator color="#FFFFFF" /> : (
+              <Text style={styles.primaryBtnText}>{startError ? 'Try Again' : 'Begin Workout Session 🚀'}</Text>
+            )}
           </Pressable>
+          {startError === 'alerts' && (
+            <Pressable
+              onPress={() => handleStartWorkout(true)}
+              disabled={isPreparingWorkout}
+              accessibilityRole="button"
+              style={({ pressed }) => ({ minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.two, opacity: pressed || isPreparingWorkout ? 0.6 : 1 })}>
+              <Text style={{ color: colors.primary, fontWeight: '600' }}>Start without reminder</Text>
+            </Pressable>
+          )}
         </View>
+
+        <Modal
+          visible={pendingWorkout !== null}
+          animationType="slide"
+          onRequestClose={handleReminderBack}>
+          {pendingWorkout && (
+            <WorkoutProgressReminder
+              workoutTypeName={pendingWorkout.type.name}
+              alerts={pendingWorkout.alerts}
+              isStarting={isPreparingWorkout}
+              hasStartError={startError === 'session'}
+              onBack={handleReminderBack}
+              onStart={() => handleStartWorkout()}
+            />
+          )}
+        </Modal>
 
         {/* Modal: Create Custom Workout Type */}
         <Modal

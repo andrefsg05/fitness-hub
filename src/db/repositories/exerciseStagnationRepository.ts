@@ -74,7 +74,7 @@ export class ExerciseStagnationRepository {
     );
   }
 
-  async getActiveAlerts(): Promise<ExerciseStagnationAlert[]> {
+  async getActiveAlerts(category?: string): Promise<ExerciseStagnationAlert[]> {
     return await this.db.getAllAsync<ExerciseStagnationAlert>(
       `SELECT
          state.exercise_id,
@@ -86,9 +86,12 @@ export class ExerciseStagnationRepository {
        FROM exercise_stagnation_states state
        JOIN exercises e ON e.id = state.exercise_id
        JOIN exercise_prs pr ON pr.exercise_id = state.exercise_id AND pr.is_active = 1
-       WHERE state.non_pr_workout_count >= state.next_alert_at
-          OR state.alert_mode = 'persistent'
-       ORDER BY e.name ASC`
+       WHERE (state.non_pr_workout_count >= state.next_alert_at
+          OR state.alert_mode = 'persistent')
+         AND (? IS NULL OR LOWER(TRIM(e.category)) = LOWER(TRIM(?)))
+       ORDER BY e.name ASC`,
+      category ?? null,
+      category ?? null
     );
   }
 
