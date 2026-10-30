@@ -21,6 +21,7 @@ Built with an **offline-first** architecture, it functions as a fast, reliable, 
 - **Live Workout Tracking:** Start and resume workout sessions. Log exercises, sets, drop sets, reps, weights, and session notes without losing progress if the app closes.
 - **Previous Workout Reference & Import:** Inspect previous exercises and loads for the current routine on the fly via a slide-down drawer, with one-tap exercise importing.
 - **Personal Records (PRs) & 1RM Analytics:** Real-time PR detection while logging sets and a dedicated Personal Records screen featuring PR progression history and Estimated One-Rep Max (1RM) calculations using the Epley formula.
+- **Exercise Progress Alerts:** Get alerted when an exercise goes several workouts without a new PR, with options to dismiss the alert or keep receiving reminders.
 - **Workout History & Deep Details:** Review past workouts with a complete breakdown of exercises, loads, drop sets, and notes.
 - **Fitness Habits & Reminders:** Set up local notifications for daily fitness habits (creatine, hydration, weigh-ins).
 - **Body Weight Logging:** Log body weight updates.
