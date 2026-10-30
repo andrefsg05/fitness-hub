@@ -1,5 +1,9 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useActiveWorkoutStore } from '@/stores/useActiveWorkoutStore';
 import { Colors, Spacing } from '@/constants/theme';
@@ -9,117 +13,123 @@ export function WorkoutActionBanner() {
   const router = useRouter();
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const scale = useSharedValue(1);
+  const reduceMotion = useReducedMotion();
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  const animatePress = (pressed: boolean) => {
+    scale.value = withTiming(reduceMotion ? 1 : pressed ? 0.98 : 1, {
+      duration: pressed ? 100 : 160,
+    });
+  };
 
   const handlePress = () => {
+    // Haptics are optional feedback and must never delay opening the workout.
+    if (Platform.OS !== 'web') {
+      const feedback = Platform.OS === 'android'
+        ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Virtual_Key)
+        : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      void feedback.catch(() => {});
+    }
     router.push('/workout/active');
   };
 
-  // If there is an ongoing workout, display the active banner with details and "Resume"
-  if (activeWorkout) {
-    return (
-      <Pressable
-        style={({ pressed }) => [
-          styles.container,
-          styles.activeContainer,
-          { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1 },
-        ]}
-        onPress={handlePress}>
-        <View style={styles.content}>
-          <View style={styles.pulseDot} />
-          <View style={styles.textContainer}>
-            <Text style={styles.title}>Workout in Progress</Text>
-            <Text style={styles.subtitle}>
-              {activeWorkout.workout_type_name} • {activeWorkout.exercises.length} Exercises • {activeWorkout.total_sets} Sets
-            </Text>
-          </View>
-        </View>
-        <View style={styles.resumeBadge}>
-          <Text style={styles.resumeText}>Resume →</Text>
-        </View>
-      </Pressable>
-    );
-  }
+  const title = activeWorkout ? 'Workout in Progress' : 'Start New Workout';
+  const details = activeWorkout
+    ? `${activeWorkout.workout_type_name} • ${activeWorkout.exercises.length} Exercises • ${activeWorkout.total_sets} Sets`
+    : undefined;
 
-  // Otherwise, display the "+ Start New Workout" button
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.container,
-        styles.startButton,
-        { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1 },
-      ]}
-      onPress={handlePress}>
-      <Text style={styles.startButtonText}>+ Start New Workout</Text>
-    </Pressable>
+    <Animated.View style={[styles.container, { shadowColor: colors.workoutActionEnd }, animatedStyle]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={activeWorkout ? `Resume workout. ${details}` : title}
+        onPress={handlePress}
+        onPressIn={() => animatePress(true)}
+        onPressOut={() => animatePress(false)}>
+        {({ pressed }) => (
+          <LinearGradient
+            colors={[colors.workoutActionStart, colors.workoutActionEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.surface}>
+            <View pointerEvents="none" accessible={false} style={StyleSheet.absoluteFill}>
+              <View style={[styles.diagonal, styles.diagonalFirst, { backgroundColor: colors.workoutActionDetail }]} />
+              <View style={[styles.diagonal, styles.diagonalSecond, { backgroundColor: colors.workoutActionDetail }]} />
+              {pressed && <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.workoutActionEnd, opacity: 0.2 }]} />}
+            </View>
+            <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.iconTile, { backgroundColor: colors.workoutActionOverlay }]}>
+              <Ionicons name="barbell-outline" size={25} color={colors.onWorkoutAction} />
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={[styles.title, { color: colors.onWorkoutAction }]}>{title}</Text>
+              {details && <Text style={[styles.subtitle, { color: colors.workoutActionMuted }]}>{details}</Text>}
+            </View>
+            <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.action, { backgroundColor: colors.workoutActionOverlay }]}>
+              {activeWorkout ? (
+                <>
+                  <Text style={[styles.resumeText, { color: colors.onWorkoutAction }]}>Resume</Text>
+                  <Ionicons name="arrow-forward" size={16} color={colors.onWorkoutAction} />
+                </>
+              ) : (
+                <Ionicons name="play" size={19} color={colors.onWorkoutAction} style={styles.playIcon} />
+              )}
+            </View>
+          </LinearGradient>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     marginVertical: Spacing.two,
-    borderRadius: 14,
-    shadowColor: '#2563EB',
+    borderRadius: 16,
     shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     elevation: 4,
   },
-  // Button state styles
-  startButton: {
-    paddingVertical: 14,
+  surface: {
+    minHeight: 84,
+    borderRadius: 16,
+    overflow: 'hidden',
+    padding: Spacing.three,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two + Spacing.one,
+  },
+  diagonal: {
+    position: 'absolute',
+    top: -60,
+    bottom: -60,
+    width: 22,
+    transform: [{ rotate: '25deg' }],
+  },
+  diagonalFirst: { right: 65 },
+  diagonalSecond: { right: 103 },
+  iconTile: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
   },
-  startButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  // Active banner state styles
-  activeContainer: {
-    paddingVertical: Spacing.two + 2,
-    paddingHorizontal: Spacing.four,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    flex: 1,
-  },
-  pulseDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#FFFFFF',
-  },
-  textContainer: {
-    flex: 1,
-  },
-  title: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  subtitle: {
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  resumeBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+  textContainer: { flex: 1 },
+  title: { fontSize: 17, fontWeight: '800' },
+  subtitle: { fontSize: 12, lineHeight: 18, marginTop: Spacing.one },
+  action: {
+    minWidth: 40,
+    minHeight: 40,
     borderRadius: 20,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.one,
   },
-  resumeText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 12,
-  },
+  playIcon: { marginLeft: 2 },
+  resumeText: { fontSize: 12, fontWeight: '700' },
 });
